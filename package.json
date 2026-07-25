@@ -1,0 +1,16 @@
+{
+  "name": "xtrace-surplus-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node backend/src/index.js",
+    "dev": "node --watch backend/src/index.js",
+    "seed": "node backend/src/seed-cli.js",
+    "test": "node --test backend/test/*.test.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  }
+}
+
