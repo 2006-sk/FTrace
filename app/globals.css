@@ -1,0 +1,147 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-pixel: "Press Start 2P", system-ui, monospace;
+  --font-sans: "Outfit", system-ui, sans-serif;
+  --color-panel: #1a1f2e;
+  --color-accent: #e85d4c;
+  --color-gold: #f0b429;
+  --color-turf: #4a9c3a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: var(--font-sans);
+  background: #0f1419;
+  color: #f2f4f7;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: #3a4560;
+  border-radius: 3px;
+}
+
+/* ── Pixel-art game UI kit ─────────────────────────────────────────── */
+
+.pixel {
+  font-family: var(--font-pixel);
+  letter-spacing: 0.5px;
+  line-height: 1.5;
+}
+
+/* Chunky RPG dialog panel with cut ("notched") pixel corners. */
+.pixel-frame {
+  border-radius: 0 !important;
+  border: 0 !important;
+  background-color: #171d30;
+  color: #eef2ff;
+  box-shadow:
+    inset 0 0 0 2px #2c3a63,
+    inset 0 0 0 4px #0c1020,
+    0 -4px 0 #0c1020,
+    0 4px 0 #0c1020,
+    -4px 0 0 #0c1020,
+    4px 0 0 #0c1020,
+    0 -8px 0 #f0b429,
+    0 8px 0 #f0b429,
+    -8px 0 0 #f0b429,
+    8px 0 0 #f0b429;
+  backdrop-filter: none !important;
+}
+
+/* Wood variant for the inventory cabinet / bookshelf. */
+.pixel-frame--wood {
+  background-color: #6f4622;
+  color: #f6ecd8;
+  box-shadow:
+    inset 0 0 0 2px #a9713a,
+    inset 0 0 0 4px #3a2412,
+    0 -4px 0 #3a2412,
+    0 4px 0 #3a2412,
+    -4px 0 0 #3a2412,
+    4px 0 0 #3a2412,
+    0 -8px 0 #d4af37,
+    0 8px 0 #d4af37,
+    -8px 0 0 #d4af37,
+    8px 0 0 #d4af37;
+}
+
+/* Blocky list rows / cells inside a pixel panel. */
+.pixel-cell {
+  border-radius: 0 !important;
+  background-color: #10152a;
+  box-shadow: inset 0 0 0 2px #2a3556;
+}
+.pixel-cell--active {
+  background-color: #3a1f1c;
+  box-shadow: inset 0 0 0 2px #e85d4c;
+}
+.pixel-cell--wood {
+  border-radius: 0 !important;
+  background-color: #4f3218;
+  box-shadow: inset 0 0 0 2px #8a5a2f;
+}
+
+/* A shelf plank behind a row (bookshelf look). */
+.pixel-shelf {
+  position: relative;
+}
+.pixel-shelf::after {
+  content: "";
+  position: absolute;
+  left: -6px;
+  right: -6px;
+  bottom: -7px;
+  height: 4px;
+  background: #3a2412;
+  box-shadow: 0 2px 0 #2a1a0d;
+}
+
+/* Small blocky icon tile (jar / box on a shelf). */
+.pixel-chip {
+  border-radius: 0 !important;
+  box-shadow:
+    inset -2px -2px 0 rgba(0, 0, 0, 0.35),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.25);
+  image-rendering: pixelated;
+}
+
+/* Pixel-styled buttons inside panels. */
+.pixel-btn {
+  border-radius: 0 !important;
+  font-family: var(--font-pixel);
+  font-size: 9px !important;
+  letter-spacing: 0.5px;
+  box-shadow:
+    inset 0 0 0 2px rgba(0, 0, 0, 0.4),
+    0 3px 0 rgba(0, 0, 0, 0.45);
+}
+.pixel-btn:active {
+  transform: translateY(2px);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.4);
+}
+
+/* Segmented pixel progress bar. */
+.pixel-bar {
+  border-radius: 0 !important;
+  background-color: #0c1020;
+  box-shadow: inset 0 0 0 2px #2a3556;
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0,
+    transparent 5px,
+    rgba(0, 0, 0, 0.4) 5px,
+    rgba(0, 0, 0, 0.4) 6px
+  );
+}
