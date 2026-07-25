@@ -25,7 +25,7 @@ export function callVariables(recoveryCase, receiver) {
   const food = recoveryCase.food;
   const pickup = recoveryCase.pickup;
   return {
-    agentName: 'XTrace food recovery assistant',
+    agentName: 'FTrace food recovery assistant',
     restaurantName: recoveryCase.restaurantName,
     receiverName: receiver.name,
     foodDescription: stringify(food.description),

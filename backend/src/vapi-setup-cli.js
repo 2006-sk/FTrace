@@ -14,7 +14,7 @@ const phoneNumber =
   existing[0] ??
   (await client.createFreePhoneNumber({
     areaCode: '408',
-    name: 'XTrace Surplus Demo'
+    name: 'FTrace Surplus Demo'
   }));
 
 console.log(
@@ -30,4 +30,3 @@ console.log(
     2
   )
 );
-

@@ -1,6 +1,6 @@
-# XTrace Surplus Intelligence
+# FTrace Surplus Intelligence
 
-XTrace Surplus Intelligence helps a restaurant sell food while it still has
+FTrace Surplus Intelligence helps a restaurant sell food while it still has
 commercial value and donate what remains before it becomes waste:
 
 **surplus detected → timed deal to lapsed guests → unsold balance rolls into

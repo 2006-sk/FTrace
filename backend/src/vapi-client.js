@@ -82,7 +82,7 @@ export class VapiClient {
 
   createFreePhoneNumber({
     areaCode = '408',
-    name = 'XTrace Surplus Demo'
+    name = 'FTrace Surplus Demo'
   } = {}) {
     return this.request('/phone-number', {
       method: 'POST',
@@ -125,7 +125,7 @@ export class VapiClient {
       };
     } else {
       payload.assistant = {
-        name: 'XTrace Surplus Recovery Demo',
+        name: 'FTrace Surplus Recovery Demo',
         firstMessage,
         firstMessageMode: 'assistant-speaks-first',
         model: {
@@ -152,9 +152,9 @@ export class VapiClient {
 export function buildTestCallPrompt() {
   return {
     firstMessage:
-      'Hi, this is the XTrace restaurant inventory demo. Is now a good time for a very short test?',
+      'Hi, this is the FTrace restaurant inventory demo. Is now a good time for a very short test?',
     systemPrompt: [
-      'You are demonstrating XTrace Surplus Recovery to the project owner.',
+      'You are demonstrating FTrace Surplus Recovery to the project owner.',
       'Explain briefly that ordering ten chicken biryanis deducts basmati rice, chicken, onion, and yogurt from inventory.',
       'Then explain that inventory intelligence can create a time-limited deal when meals may expire, while XTrace remembers why earlier promotions or shelter calls worked.',
       'Keep the entire call under two minutes.',
@@ -186,7 +186,7 @@ export function buildRecoveryAssistantConfig({ serverUrl = '' } = {}) {
   ].join(' ');
 
   return {
-    name: 'XTrace Surplus Recovery',
+    name: 'FTrace Surplus Recovery',
     firstMessage:
       'Hi, this is the food recovery assistant calling for {{restaurantName}}... We have {{quantityText}} of {{foodDescription}} available tonight. Is this the right person to discuss accepting it?',
     firstMessageMode: 'assistant-speaks-first',

@@ -86,7 +86,7 @@ export default class CityScene extends Phaser.Scene {
 
     const center = isoToWorld(GRID / 2, GRID / 2)
     this.add
-      .text(center.x, isoToWorld(0, 0).y - 54, "XTRACE", {
+      .text(center.x, isoToWorld(0, 0).y - 54, "FTRACE", {
         fontFamily: '"Press Start 2P", monospace',
         fontSize: "16px",
         color: "#ffffff",

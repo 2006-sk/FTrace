@@ -45,8 +45,8 @@ function buildRecoveryPayload(restaurant, deal) {
   const now = Date.now()
   const quantity = Math.max(1, deal?.donateQuantity ?? 10)
   return {
-    restaurantId: restaurant?.id ?? "surplus-city",
-    restaurantName: restaurant?.name ?? "XTrace Kitchen",
+    restaurantId: restaurant?.id ?? "ftrace",
+    restaurantName: restaurant?.name ?? "FTrace Kitchen",
     food: {
       description: `${quantity} fresh ${deal?.itemName ?? "surplus"} meals`,
       quantity,

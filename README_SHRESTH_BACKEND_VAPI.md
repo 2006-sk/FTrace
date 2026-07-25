@@ -110,7 +110,7 @@ deducts nothing.
 node backend/src/vapi-assistant-setup-cli.js
 ```
 
-The command creates or updates one assistant named `XTrace Surplus Recovery`.
+The command creates or updates one assistant named `FTrace Surplus Recovery`.
 Put the returned ID in `VAPI_ASSISTANT_ID`.
 
 If the backend has a public HTTPS URL, set it before running the command:

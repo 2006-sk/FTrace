@@ -13,9 +13,16 @@ const client = new VapiClient({
 });
 
 const assistants = await client.listAssistants();
-const existing = assistants.find(
-  (assistant) => assistant.name === 'XTrace Surplus Recovery'
-);
+const configured = config.vapiAssistantId
+  ? assistants.find((assistant) => assistant.id === config.vapiAssistantId)
+  : null;
+const existing =
+  configured ??
+  assistants.find(
+    (assistant) =>
+      assistant.name === 'FTrace Surplus Recovery' ||
+      assistant.name === 'XTrace Surplus Recovery'
+  );
 const serverUrl = config.publicBaseUrl
   ? `${config.publicBaseUrl.replace(/\/$/, '')}/api/v1/webhooks/vapi`
   : '';
@@ -36,4 +43,3 @@ console.log(
     2
   )
 );
-

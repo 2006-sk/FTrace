@@ -23,7 +23,7 @@ const xtraceClient = new XTraceClient({
 
 const server = createApp({ db, config, vapiClient, xtraceClient });
 server.listen(config.port, () => {
-  console.log(`XTrace backend listening on http://localhost:${config.port}`);
+  console.log(`FTrace backend listening on http://localhost:${config.port}`);
 });
 
 function shutdown() {

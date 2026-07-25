@@ -14,7 +14,7 @@ test('recovery assistant contains dynamic variables and structured outcome', () 
     serverUrl: 'https://example.com/api/v1/webhooks/vapi'
   });
 
-  assert.equal(config.name, 'XTrace Surplus Recovery');
+  assert.equal(config.name, 'FTrace Surplus Recovery');
   assert.match(config.firstMessage, /\{\{restaurantName\}\}/);
   assert.match(
     config.model.messages[0].content,

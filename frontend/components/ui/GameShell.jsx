@@ -108,7 +108,7 @@ export function GameShell() {
           )}
           <div>
             <p className="font-[family-name:var(--font-pixel)] text-[10px] text-[#f0b429] md:text-xs">
-              XTRACE
+              FTRACE
             </p>
             <p className="text-sm text-white/70">
               {view === "city"
@@ -231,7 +231,7 @@ export function GameShell() {
               <div className="min-w-0 flex-1">
                 <div className="mb-1 flex flex-wrap items-center gap-2">
                   <span className="rounded bg-[#e85d4c] px-2 py-0.5 font-[family-name:var(--font-pixel)] text-[8px]">
-                    XTRACE DEAL ENGINE
+                    FTRACE DEAL ENGINE
                   </span>
                   <span className="text-xs text-white/50">
                     {dealRecommendation

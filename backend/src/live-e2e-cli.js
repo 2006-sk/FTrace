@@ -96,7 +96,7 @@ const recoveryCase = await request('/api/v1/recovery-cases', {
   method: 'POST',
   body: JSON.stringify({
     restaurantId: 'rest_e2e',
-    restaurantName: 'XTrace Demo Kitchen',
+    restaurantName: 'FTrace Demo Kitchen',
     food: {
       description: 'fresh chicken biryani',
       quantity: 10,
@@ -152,4 +152,3 @@ log('complete', {
   attemptStatus: finalState.attempts[0]?.status,
   summary: finalState.attempts[0]?.summary ?? null
 });
-
