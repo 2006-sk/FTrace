@@ -171,6 +171,7 @@ export function buildRecoveryAssistantConfig({ serverUrl = '' } = {}) {
     'Allergens: {{allergens}}.',
     'It was prepared at {{preparedAt}}, is currently {{temperatureF}} degrees Fahrenheit, and is safe until {{safeUntil}}.',
     'Pickup is available at {{pickupAddress}} from {{readyAt}} until {{latestAt}}.',
+    'Use this guidance learned from earlier calls when it is relevant: {{memoryGuidance}}.',
     'Your goal is to get a clear yes or no tonight.',
     'Start with food-safety facts before asking whether they can accept.',
     'Never invent information.',

@@ -36,7 +36,7 @@ function validateE164(number) {
   return /^\+[1-9]\d{7,14}$/.test(number);
 }
 
-export function createApp({ db, config, vapiClient }) {
+export function createApp({ db, config, vapiClient, xtraceClient = null }) {
   return createServer(async (request, response) => {
     const requestId = request.headers['x-request-id'] ?? `req_${randomUUID()}`;
     const origin = config.frontendOrigin;
@@ -65,8 +65,42 @@ export function createApp({ db, config, vapiClient }) {
         sendJson(response, 200, {
           status: 'ok',
           database: 'connected',
-          vapiConfigured: Boolean(config.vapiApiKey)
+          vapiConfigured: Boolean(config.vapiApiKey),
+          xtraceConfigured: Boolean(xtraceClient)
         });
+        return;
+      }
+
+      if (
+        request.method === 'GET' &&
+        pathname === '/api/v1/memory/health'
+      ) {
+        const result = xtraceClient
+          ? await xtraceClient.health()
+          : { ok: false, error: { code: 'XTRACE_NOT_CONFIGURED' } };
+        sendJson(response, result.ok ? 200 : 503, result);
+        return;
+      }
+
+      if (
+        request.method === 'GET' &&
+        pathname === '/api/v1/memory/procedures'
+      ) {
+        const result = xtraceClient
+          ? await xtraceClient.procedures()
+          : { ok: false, procedures: [] };
+        sendJson(response, 200, result);
+        return;
+      }
+
+      if (
+        request.method === 'POST' &&
+        pathname === '/api/v1/memory/reset'
+      ) {
+        const result = xtraceClient
+          ? await xtraceClient.reset()
+          : { ok: false, error: { code: 'XTRACE_NOT_CONFIGURED' } };
+        sendJson(response, result.ok ? 200 : 503, result);
         return;
       }
 
@@ -177,10 +211,23 @@ export function createApp({ db, config, vapiClient }) {
         const result = await startRecovery(
           db,
           vapiClient,
+          xtraceClient,
           recoveryStartParams.caseId,
           value.receiverIds
         );
         sendJson(response, 202, result);
+        return;
+      }
+
+      const recoveryConflictParams = routeMatch(
+        pathname,
+        '/api/v1/recovery-cases/:caseId/conflicts'
+      );
+      if (request.method === 'GET' && recoveryConflictParams) {
+        const result = xtraceClient
+          ? await xtraceClient.conflicts(recoveryConflictParams.caseId)
+          : { ok: false, conflicts: [] };
+        sendJson(response, 200, result);
         return;
       }
 
@@ -251,7 +298,12 @@ export function createApp({ db, config, vapiClient }) {
         const event = normalizeVapiEvent(value, rawBody);
         const webhookResult = processVapiWebhook(db, event, rawBody);
         if (!webhookResult.duplicate) {
-          await advanceRecoveryFromEvent(db, vapiClient, event);
+          await advanceRecoveryFromEvent(
+            db,
+            vapiClient,
+            xtraceClient,
+            event
+          );
         }
         sendJson(response, 200, webhookResult);
         return;

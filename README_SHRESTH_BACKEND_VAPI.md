@@ -9,11 +9,13 @@ SQLite, and test runner. No package installation is required.
 
 ```bash
 npm test
+npm run test:all
 npm run seed
-npm start
+npm run start:all
 ```
 
 Default local URL: `http://localhost:8000`
+XTrace memory URL: `http://localhost:7070`
 
 Implemented inventory routes:
 
@@ -30,6 +32,10 @@ Implemented inventory routes:
 | `POST` | `/api/v1/receivers` | Add a shelter or receiver |
 | `GET` | `/api/v1/receivers` | List active receivers |
 | `POST` | `/api/v1/recovery-cases/:id/start` | Begin sequential calls |
+| `GET` | `/api/v1/memory/health` | Check the XTrace service |
+| `GET` | `/api/v1/memory/procedures` | Procedures available to the UI |
+| `POST` | `/api/v1/memory/reset` | Reset memory before a demo |
+| `GET` | `/api/v1/recovery-cases/:id/conflicts` | Contested beliefs for a case |
 
 Seeded Chicken Biryani requirements per serving:
 
@@ -120,7 +126,33 @@ curl -X POST http://localhost:8000/api/v1/recovery-cases/CASE_ID/start \
 The backend calls only one receiver at a time. A rejected
 `end-of-call-report` starts the next receiver. A confirmed acceptance changes
 the case to `accepted` and stops the sequence. XTrace is not required for this
-workflow; its future guidance can be added before `createOutboundCall`.
+workflow; if it is unavailable, the client fails soft and the call still goes
+out.
+
+### XTrace integration
+
+Before every receiver call, the backend requests guidance and adds the returned
+procedures to Vapi through the `memoryGuidance` dynamic variable. The
+`searchId` and exact procedures are saved on the call record.
+
+After Vapi sends `end-of-call-report`, the backend posts one idempotent episode
+using `vapi:<eventId>`. Rejected calls can create new procedures; accepted calls
+strengthen procedures that were supplied to the voice agent.
+
+Run both services:
+
+```bash
+npm run start:all
+```
+
+Reset the learning demo:
+
+```bash
+npm run memory:reset
+```
+
+Hosted XTrace is optional. Without `XTRACE_API_KEY`, Kenil's service uses its
+local deterministic memory store and the complete learning loop still works.
 
 ## What Shresth owns
 

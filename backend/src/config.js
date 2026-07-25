@@ -47,13 +47,18 @@ export function getConfig(overrides = {}) {
       overrides.vapiWebhookToken ?? process.env.VAPI_WEBHOOK_TOKEN ?? '',
     publicBaseUrl:
       overrides.publicBaseUrl ?? process.env.PUBLIC_BASE_URL ?? '',
-    xtraceBaseUrl:
-      overrides.xtraceBaseUrl ??
-      process.env.XTRACE_BASE_URL ??
-      'http://localhost:8100',
+    xtraceServiceUrl:
+      overrides.xtraceServiceUrl ??
+      process.env.XTRACE_SERVICE_URL ??
+      'http://localhost:7070',
     xtraceServiceToken:
       overrides.xtraceServiceToken ??
       process.env.XTRACE_SERVICE_TOKEN ??
-      ''
+      'dev-token',
+    xtraceServiceTimeoutMs: Number(
+      overrides.xtraceServiceTimeoutMs ??
+        process.env.XTRACE_SERVICE_TIMEOUT_MS ??
+        5000
+    )
   };
 }

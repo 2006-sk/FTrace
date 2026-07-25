@@ -7,6 +7,7 @@ async function setup(t) {
   const db = openDatabase(':memory:');
   seedDatabase(db);
   const vapiCalls = [];
+  const xtraceEpisodes = [];
   const vapiClient = {
     async createOutboundCall(input) {
       vapiCalls.push(input);
@@ -19,13 +20,48 @@ async function setup(t) {
       };
     }
   };
+  const xtraceClient = {
+    async health() {
+      return { ok: true, service: 'xtrace-memory' };
+    },
+    async guidance() {
+      return {
+        ok: true,
+        searchId: 'search_test',
+        beliefs: [],
+        procedures: [
+          {
+            id: 'proc_intro_basics',
+            instruction: 'Lead with the food-safety facts.',
+            confidence: 0.5
+          }
+        ]
+      };
+    },
+    toPromptBlock(procedures) {
+      return procedures.map((item) => `- ${item.instruction}`).join('\n');
+    },
+    async episode(payload) {
+      xtraceEpisodes.push(payload);
+      return { ok: true, episodeId: `episode_${xtraceEpisodes.length}` };
+    },
+    async procedures() {
+      return { ok: true, procedures: [] };
+    },
+    async conflicts() {
+      return { ok: true, conflicts: [] };
+    },
+    async reset() {
+      return { ok: true, reset: true };
+    }
+  };
   const config = {
     frontendOrigin: 'http://localhost:3000',
     vapiApiKey: 'test',
     vapiTestDestination: '+14085550123',
     vapiWebhookToken: 'webhook-test-token'
   };
-  const server = createApp({ db, config, vapiClient });
+  const server = createApp({ db, config, vapiClient, xtraceClient });
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   const address = server.address();
   const baseUrl = `http://127.0.0.1:${address.port}`;
@@ -35,7 +71,7 @@ async function setup(t) {
     db.close();
   });
 
-  return { baseUrl, db, vapiCalls };
+  return { baseUrl, db, vapiCalls, xtraceEpisodes };
 }
 
 test('health endpoint reports service state', async (t) => {
@@ -45,7 +81,8 @@ test('health endpoint reports service state', async (t) => {
   assert.deepEqual(await response.json(), {
     status: 'ok',
     database: 'connected',
-    vapiConfigured: true
+    vapiConfigured: true,
+    xtraceConfigured: true
   });
 });
 
@@ -135,7 +172,7 @@ test('Vapi webhook requires authentication and is idempotent', async (t) => {
 });
 
 test('recovery workflow advances after rejection and stops after acceptance', async (t) => {
-  const { baseUrl, vapiCalls } = await setup(t);
+  const { baseUrl, vapiCalls, xtraceEpisodes } = await setup(t);
 
   const createReceiver = async (name, phone) => {
     const response = await fetch(`${baseUrl}/api/v1/receivers`, {
@@ -198,6 +235,10 @@ test('recovery workflow advances after rejection and stops after acceptance', as
     vapiCalls[0].variableValues.foodDescription,
     'Chicken biryani'
   );
+  assert.match(
+    vapiCalls[0].variableValues.memoryGuidance,
+    /food-safety facts/
+  );
 
   const sendWebhook = (payload) =>
     fetch(`${baseUrl}/api/v1/webhooks/vapi`, {
@@ -228,6 +269,9 @@ test('recovery workflow advances after rejection and stops after acceptance', as
   assert.equal(rejected.status, 200);
   assert.equal(vapiCalls.length, 2);
   assert.equal(vapiCalls[1].destination, '+14085550112');
+  assert.equal(xtraceEpisodes.length, 1);
+  assert.equal(xtraceEpisodes[0].guidanceSearchId, 'search_test');
+  assert.equal(xtraceEpisodes[0].outcome.reason, 'capacity_unknown');
 
   const accepted = await sendWebhook({
     eventId: 'evt_accepted',
@@ -258,4 +302,27 @@ test('recovery workflow advances after rejection and stops after acceptance', as
   assert.equal(state.attempts[0].status, 'rejected');
   assert.equal(state.attempts[1].status, 'accepted');
   assert.equal(state.attempts[1].result.pickupConfirmed, true);
+  assert.equal(xtraceEpisodes.length, 2);
+  assert.equal(
+    xtraceEpisodes[1].procedureFeedback[0].result,
+    'helped'
+  );
+});
+
+test('memory proxy routes expose XTrace health, procedures, and conflicts', async (t) => {
+  const { baseUrl } = await setup(t);
+
+  const health = await fetch(`${baseUrl}/api/v1/memory/health`);
+  assert.equal(health.status, 200);
+  assert.equal((await health.json()).service, 'xtrace-memory');
+
+  const procedures = await fetch(`${baseUrl}/api/v1/memory/procedures`);
+  assert.equal(procedures.status, 200);
+  assert.deepEqual((await procedures.json()).procedures, []);
+
+  const conflicts = await fetch(
+    `${baseUrl}/api/v1/recovery-cases/rc_test/conflicts`
+  );
+  assert.equal(conflicts.status, 200);
+  assert.deepEqual((await conflicts.json()).conflicts, []);
 });

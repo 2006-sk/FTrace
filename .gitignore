@@ -1,7 +1,10 @@
-.env
-backend/data/
 node_modules/
+.env
+.env.*
+!.env.example
+backend/data/
 coverage/
 *.log
+xtrace/.data/
+xtrace/data/
 .DS_Store
-

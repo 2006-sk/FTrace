@@ -5,12 +5,16 @@
   "type": "module",
   "scripts": {
     "start": "node backend/src/index.js",
+    "start:xtrace": "npm --prefix xtrace start",
+    "start:all": "node scripts/start-all.js",
     "dev": "node --watch backend/src/index.js",
     "seed": "node backend/src/seed-cli.js",
-    "test": "node --test backend/test/*.test.js"
+    "memory:reset": "node scripts/reset-memory.js",
+    "test": "node --test backend/test/*.test.js",
+    "test:xtrace": "npm --prefix xtrace test",
+    "test:all": "npm test && npm run test:xtrace"
   },
   "engines": {
     "node": ">=22.5.0"
   }
 }
-

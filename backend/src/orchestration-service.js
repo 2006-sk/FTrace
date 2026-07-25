@@ -32,6 +32,7 @@ function callVariables(recoveryCase, receiver) {
 export async function startRecovery(
   db,
   vapiClient,
+  xtraceClient,
   recoveryCaseId,
   receiverIds
 ) {
@@ -96,10 +97,15 @@ export async function startRecovery(
     throw error;
   }
 
-  return startNextReceiver(db, vapiClient, recoveryCaseId);
+  return startNextReceiver(db, vapiClient, xtraceClient, recoveryCaseId);
 }
 
-export async function startNextReceiver(db, vapiClient, recoveryCaseId) {
+export async function startNextReceiver(
+  db,
+  vapiClient,
+  xtraceClient,
+  recoveryCaseId
+) {
   const active = db
     .prepare(`
       SELECT call_id AS callId
@@ -142,6 +148,26 @@ export async function startNextReceiver(db, vapiClient, recoveryCaseId) {
     const internalCallId = `call_${randomUUID()}`;
     const now = new Date().toISOString();
     const variables = callVariables(recoveryCase, next);
+    const guidance = xtraceClient
+      ? await xtraceClient.guidance({
+          receiver: {
+            id: next.receiverId,
+            name: next.name,
+            type: next.type,
+            isFirstContact: true
+          },
+          food: recoveryCase.food,
+          restaurantId: recoveryCase.restaurantId
+        })
+      : {
+          ok: false,
+          procedures: [],
+          beliefs: [],
+          searchId: null
+        };
+    variables.memoryGuidance = xtraceClient
+      ? xtraceClient.toPromptBlock(guidance.procedures)
+      : 'No prior call guidance is available.';
 
     try {
       const providerCall = await vapiClient.createOutboundCall({
@@ -160,7 +186,7 @@ export async function startNextReceiver(db, vapiClient, recoveryCaseId) {
           INSERT INTO calls
             (id, recovery_case_id, receiver_id, vapi_call_id, destination,
              status, guidance_json, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, '[]', ?, ?)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
           internalCallId,
           recoveryCaseId,
@@ -168,6 +194,12 @@ export async function startNextReceiver(db, vapiClient, recoveryCaseId) {
           providerCall.id,
           next.phone,
           providerCall.status ?? 'queued',
+          JSON.stringify({
+            searchId: guidance.searchId,
+            procedures: guidance.procedures,
+            beliefs: guidance.beliefs,
+            ok: guidance.ok
+          }),
           now,
           now
         );
@@ -203,15 +235,25 @@ export async function startNextReceiver(db, vapiClient, recoveryCaseId) {
 export async function advanceRecoveryFromEvent(
   db,
   vapiClient,
+  xtraceClient,
   event
 ) {
   if (event.type !== 'end-of-call-report') return null;
 
   const call = db
     .prepare(`
-      SELECT id, recovery_case_id AS recoveryCaseId, receiver_id AS receiverId
-      FROM calls
-      WHERE vapi_call_id = ? OR id = ?
+      SELECT
+        c.id,
+        c.recovery_case_id AS recoveryCaseId,
+        c.receiver_id AS receiverId,
+        c.guidance_json AS guidanceJson,
+        r.name AS receiverName,
+        r.type AS receiverType,
+        rc.restaurant_id AS restaurantId
+      FROM calls c
+      LEFT JOIN receivers r ON r.id = c.receiver_id
+      LEFT JOIN recovery_cases rc ON rc.id = c.recovery_case_id
+      WHERE c.vapi_call_id = ? OR c.id = ?
       LIMIT 1
     `)
     .get(event.vapiCallId, event.internalCallId);
@@ -267,6 +309,53 @@ export async function advanceRecoveryFromEvent(
     throw error;
   }
 
+  if (xtraceClient) {
+    const guidance = call.guidanceJson
+      ? JSON.parse(call.guidanceJson)
+      : { searchId: null, procedures: [] };
+    const observations = [
+      ...(result.observations ?? []),
+      ...(result.blockers ?? [])
+    ].map((statement) => ({
+      statement,
+      sourceType: 'call_transcript',
+      sourceId: call.id,
+      speaker: 'receiver',
+      observedAt: now
+    }));
+    if (result.summary) {
+      observations.push({
+        statement: result.summary,
+        sourceType: 'call_analysis',
+        sourceId: call.id,
+        speaker: 'system',
+        observedAt: now
+      });
+    }
+    await xtraceClient.episode({
+      idempotencyKey: `vapi:${event.eventId}`,
+      recoveryCaseId: call.recoveryCaseId,
+      callId: call.id,
+      receiverId: call.receiverId,
+      receiver: {
+        id: call.receiverId,
+        name: call.receiverName,
+        type: call.receiverType
+      },
+      restaurantId: call.restaurantId,
+      guidanceSearchId: guidance.searchId,
+      outcome: {
+        status: accepted ? 'accepted' : 'rejected',
+        reason: accepted ? null : inferOutcomeReason(result)
+      },
+      observations,
+      procedureFeedback: (guidance.procedures ?? []).map((procedure) => ({
+        procedureId: procedure.id,
+        result: accepted ? 'helped' : 'not_used'
+      }))
+    });
+  }
+
   if (accepted) {
     return {
       recoveryCaseId: call.recoveryCaseId,
@@ -274,6 +363,37 @@ export async function advanceRecoveryFromEvent(
       activeCallId: null
     };
   }
-  return startNextReceiver(db, vapiClient, call.recoveryCaseId);
+  return startNextReceiver(
+    db,
+    vapiClient,
+    xtraceClient,
+    call.recoveryCaseId
+  );
 }
 
+function inferOutcomeReason(result) {
+  const text = [
+    result.summary,
+    ...(result.blockers ?? []),
+    ...(result.observations ?? [])
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  if (/temperature|prepared|food safety|safe until/.test(text)) {
+    return 'food_safety_information_missing';
+  }
+  if (/allergen/.test(text)) return 'allergen_information_missing';
+  if (/wrong person|wrong contact|coordinator|decision maker/.test(text)) {
+    return 'wrong_contact';
+  }
+  if (/pickup|too late|window|closing/.test(text)) {
+    return 'pickup_window_too_late';
+  }
+  if (/capacity|space|refrigerator|fridge|storage/.test(text)) {
+    return 'capacity_unknown';
+  }
+  if (/driver|transport|vehicle/.test(text)) return 'no_transport';
+  return 'unknown';
+}
