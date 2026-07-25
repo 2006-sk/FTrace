@@ -1,0 +1,17 @@
+{
+  "name": "xtrace-memory-service",
+  "version": "1.0.0",
+  "description": "XTrace memory service: learned procedures, guidance search, episode ingestion, contested beliefs.",
+  "private": true,
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node test/smoke.js",
+    "test:live": "node test/live.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
