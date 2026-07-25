@@ -54,6 +54,8 @@ export function GameShell() {
   const backendError = useGameStore((s) => s.backendError)
   const memoryProcedures = useGameStore((s) => s.memoryProcedures)
   const dealRecommendation = useGameStore((s) => s.dealRecommendation)
+  const orderState = useGameStore((s) => s.orderState)
+  const simulateOrder = useGameStore((s) => s.simulateOrder)
   const bannerRef = useRef(null)
 
   useEffect(() => {
@@ -247,8 +249,8 @@ export function GameShell() {
           ref={bannerRef}
           className="pointer-events-auto absolute bottom-4 left-1/2 w-[min(640px,calc(100%-40rem))] min-w-[min(100%-2rem,280px)] -translate-x-1/2"
         >
-          <Card className="overflow-hidden">
-            <div className="flex flex-col gap-3 p-4 md:p-5">
+          <Card className="overflow-hidden" data-testid="deal-card">
+            <div className="flex flex-col gap-2 p-3 md:p-3.5">
               <div className="min-w-0 flex-1">
                 <div className="mb-1 flex flex-wrap items-center gap-2">
                   <span className="rounded bg-[#e85d4c] px-2 py-0.5 font-[family-name:var(--font-pixel)] text-[8px]">
@@ -265,28 +267,52 @@ export function GameShell() {
                     </span>
                   )}
                 </div>
-                <h3 className="truncate text-lg font-semibold">
-                  {dealRecommendation?.action === "create_deal"
-                    ? `Chicken biryani · ${dealRecommendation.sellQuantity + dealRecommendation.donateQuantity} meals`
-                    : active?.label}
-                </h3>
-                <p className="mt-0.5 text-sm text-white/65">
+                <div className="flex items-end justify-between gap-3">
+                  <h3 className="truncate text-base font-semibold" data-testid="deal-title">
                   {dealRecommendation
-                    ? `$${(dealRecommendation.originalPriceCents / 100).toFixed(2)} → $${(dealRecommendation.dealPriceCents / 100).toFixed(2)} · ${dealRecommendation.discountPercent}% intelligent deal`
-                    : active?.deal}
-                </p>
+                    ? `${dealRecommendation.itemName} · ${dealRecommendation.sellQuantity + dealRecommendation.donateQuantity} meals`
+                    : active?.label}
+                  </h3>
+                  <Button
+                    size="sm"
+                    className="pixel-btn shrink-0 px-2 py-1 text-[9px]"
+                    disabled={
+                      !dealRecommendation ||
+                      orderState?.loading ||
+                      dealRecommendation.sellQuantity <= 0
+                    }
+                    onClick={() => simulateOrder(1)}
+                  >
+                    {orderState?.loading ? "ORDERING…" : "SIMULATE ORDER"}
+                  </Button>
+                </div>
+                <div className="mt-0.5 flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-xs text-white/65">
+                    {dealRecommendation
+                      ? `$${(dealRecommendation.originalPriceCents / 100).toFixed(2)} → $${(dealRecommendation.dealPriceCents / 100).toFixed(2)} · ${dealRecommendation.discountPercent}% intelligent deal`
+                      : active?.deal}
+                  </p>
+                  {orderState?.message && (
+                    <p
+                      className={`text-[10px] ${orderState.error ? "text-[#ffb4a8]" : "text-[#4ade80]"}`}
+                      data-testid="order-status"
+                    >
+                      {orderState.message}
+                    </p>
+                  )}
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <div className="rounded-lg border border-[#f0b429]/30 bg-[#f0b429]/10 px-3 py-2">
+                <div className="rounded-lg border border-[#f0b429]/30 bg-[#f0b429]/10 px-3 py-1.5">
                   <p className="pixel text-[8px] text-[#f0b429]">SELL NOW</p>
-                  <p className="mt-1 text-sm font-semibold">
+                  <p className="mt-0.5 text-sm font-semibold" data-testid="sell-quantity">
                     {dealRecommendation?.sellQuantity ?? surplusItems[0]?.qty} meals
                   </p>
                   <p className="text-[10px] text-white/45">Timed deal allocation</p>
                 </div>
-                <div className="rounded-lg border border-[#4ade80]/30 bg-[#4ade80]/10 px-3 py-2">
+                <div className="rounded-lg border border-[#4ade80]/30 bg-[#4ade80]/10 px-3 py-1.5">
                   <p className="pixel text-[8px] text-[#4ade80]">DONATE NEXT</p>
-                  <p className="mt-1 text-sm font-semibold">
+                  <p className="mt-0.5 text-sm font-semibold" data-testid="donate-quantity">
                     {dealRecommendation?.donateQuantity ?? 0} meals
                   </p>
                   <p className="text-[10px] text-white/45">Unsold units roll over</p>

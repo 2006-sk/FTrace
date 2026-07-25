@@ -11,6 +11,14 @@ export const restaurants = [
     revenue: 2327035,
     reputation: 94,
     surplusRisk: "high",
+    dealProfile: {
+      recipeId: "recipe_tomato_pasta",
+      itemName: "Garden tomato pasta",
+      inventoryCount: 24,
+      hoursToExpiry: 3,
+      demandLevel: "low",
+      originalPriceCents: 1199,
+    },
   },
   {
     id: "noodle",
@@ -24,6 +32,14 @@ export const restaurants = [
     revenue: 891200,
     reputation: 88,
     surplusRisk: "medium",
+    dealProfile: {
+      recipeId: "recipe_biryani",
+      itemName: "Spiced biryani bowl",
+      inventoryCount: 18,
+      hoursToExpiry: 2,
+      demandLevel: "normal",
+      originalPriceCents: 1499,
+    },
   },
   {
     id: "burger",
@@ -37,6 +53,14 @@ export const restaurants = [
     revenue: 1456000,
     reputation: 91,
     surplusRisk: "low",
+    dealProfile: {
+      recipeId: "recipe_tomato_pasta",
+      itemName: "Crispy pasta bake",
+      inventoryCount: 11,
+      hoursToExpiry: 5,
+      demandLevel: "high",
+      originalPriceCents: 1299,
+    },
   },
   {
     id: "taco",
@@ -50,6 +74,14 @@ export const restaurants = [
     revenue: 412800,
     reputation: 85,
     surplusRisk: "high",
+    dealProfile: {
+      recipeId: "recipe_biryani",
+      itemName: "Late-night biryani box",
+      inventoryCount: 30,
+      hoursToExpiry: 1,
+      demandLevel: "low",
+      originalPriceCents: 1399,
+    },
   },
 ]
 

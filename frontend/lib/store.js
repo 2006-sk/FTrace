@@ -41,14 +41,15 @@ function ingredientToInventory(item) {
   }
 }
 
-function buildRecoveryPayload(restaurant) {
+function buildRecoveryPayload(restaurant, deal) {
   const now = Date.now()
+  const quantity = Math.max(1, deal?.donateQuantity ?? 10)
   return {
     restaurantId: restaurant?.id ?? "surplus-city",
     restaurantName: restaurant?.name ?? "Surplus City Kitchen",
     food: {
-      description: "10 fresh chicken biryani meals",
-      quantity: 10,
+      description: `${quantity} fresh ${deal?.itemName ?? "surplus"} meals`,
+      quantity,
       unit: "meals",
       allergens: ["dairy"],
       preparedAt: new Date(now - 30 * 60 * 1000).toISOString(),
@@ -76,6 +77,8 @@ export const useGameStore = create((set, get) => ({
   recipes: [],
   memoryProcedures: [],
   dealRecommendation: null,
+  restaurantOrders: {},
+  orderState: null,
   backendStatus: "connecting",
   backendError: null,
   inventoryOpen: false,
@@ -84,14 +87,18 @@ export const useGameStore = create((set, get) => ({
 
   setPhaserReady: (ready) => set({ phaserReady: ready }),
 
-  openRestaurant: (restaurant) =>
+  openRestaurant: (restaurant) => {
     set({
       selectedRestaurant: restaurant,
       view: "interior",
       selectedCustomerIds: [],
       callState: null,
       inventoryOpen: false,
-    }),
+      dealRecommendation: null,
+      orderState: null,
+    })
+    get().recalculateDeal(restaurant)
+  },
 
   backToCity: () =>
     set({
@@ -122,24 +129,13 @@ export const useGameStore = create((set, get) => ({
 
   hydrateBackend: async () => {
     try {
-      const [health, ingredients, recipes, receivers, memory, recommendation] =
+      const [health, ingredients, recipes, receivers, memory] =
         await Promise.all([
           apiRequest("/health"),
           apiRequest("/api/v1/ingredients"),
           apiRequest("/api/v1/recipes"),
           apiRequest("/api/v1/receivers"),
           apiRequest("/api/v1/memory/procedures"),
-          apiRequest("/api/v1/deals/recommend", {
-            method: "POST",
-            body: JSON.stringify({
-              inventoryCount: 20,
-              hoursToExpiry: 4,
-              demandLevel: "normal",
-              memory: "similar_30_percent_sold_out",
-              originalPriceCents: 1499,
-              targetSegment: "lapsed_guests_30_90_days",
-            }),
-          }),
         ])
       const mappedReceivers = receivers.items.map(receiverToCustomer)
       set({
@@ -153,7 +149,6 @@ export const useGameStore = create((set, get) => ({
           mappedReceivers.some((receiver) => receiver.id === id),
         ),
         memoryProcedures: memory.procedures ?? [],
-        dealRecommendation: recommendation,
       })
       get().pushLog({
         type: "system",
@@ -168,6 +163,88 @@ export const useGameStore = create((set, get) => ({
         title: "Backend unavailable",
         detail: error.message,
         restaurant: "Check API server",
+      })
+    }
+  },
+
+  recalculateDeal: async (restaurant = get().selectedRestaurant, orderedOverride) => {
+    if (!restaurant?.dealProfile) return
+    const profile = restaurant.dealProfile
+    const ordered =
+      orderedOverride ?? get().restaurantOrders[restaurant.id] ?? 0
+    const inventoryCount = Math.max(0, profile.inventoryCount - ordered)
+    try {
+      const recommendation = await apiRequest("/api/v1/deals/recommend", {
+        method: "POST",
+        body: JSON.stringify({
+          inventoryCount,
+          hoursToExpiry: profile.hoursToExpiry,
+          demandLevel: profile.demandLevel,
+          memory: "similar_30_percent_sold_out",
+          originalPriceCents: profile.originalPriceCents,
+          targetSegment: "lapsed_guests_30_90_days",
+        }),
+      })
+      if (get().selectedRestaurant?.id !== restaurant.id) return
+      set({
+        dealRecommendation: {
+          ...recommendation,
+          itemName: profile.itemName,
+          recipeId: profile.recipeId,
+          orderedQuantity: ordered,
+        },
+      })
+    } catch (error) {
+      set({ backendError: error.message })
+    }
+  },
+
+  simulateOrder: async (quantity = 1) => {
+    const { selectedRestaurant: restaurant, dealRecommendation: deal } = get()
+    if (!restaurant?.dealProfile || !deal || get().orderState?.loading) return
+    set({
+      orderState: {
+        loading: true,
+        message: `Ordering ${quantity} ${deal.itemName}…`,
+      },
+    })
+    try {
+      const order = await apiRequest("/api/v1/orders", {
+        method: "POST",
+        body: JSON.stringify({
+          recipeId: restaurant.dealProfile.recipeId,
+          quantity,
+        }),
+      })
+      const ingredients = await apiRequest("/api/v1/ingredients")
+      const ordered =
+        (get().restaurantOrders[restaurant.id] ?? 0) + quantity
+      set((state) => ({
+        inventory: ingredients.items.map(ingredientToInventory),
+        restaurantOrders: {
+          ...state.restaurantOrders,
+          [restaurant.id]: ordered,
+        },
+        orderState: {
+          loading: false,
+          message: `${quantity} sold · ingredients deducted`,
+          orderId: order.id,
+        },
+      }))
+      await get().recalculateDeal(restaurant, ordered)
+      get().pushLog({
+        type: "deal",
+        title: `${quantity} ${deal.itemName} sold`,
+        detail: "SQLite stock deducted · deal recalculated live",
+        restaurant: restaurant.name,
+      })
+    } catch (error) {
+      set({
+        orderState: {
+          loading: false,
+          message: error.message,
+          error: true,
+        },
       })
     }
   },
@@ -230,6 +307,7 @@ export const useGameStore = create((set, get) => ({
 
   beginRecovery: async (receivers, bulk) => {
     const restaurant = get().selectedRestaurant
+    const deal = get().dealRecommendation
     get().startCall({
       customerId: bulk ? null : receivers[0]?.id,
       bulk,
@@ -239,7 +317,7 @@ export const useGameStore = create((set, get) => ({
     try {
       const recovery = await apiRequest("/api/v1/recovery-cases", {
         method: "POST",
-        body: JSON.stringify(buildRecoveryPayload(restaurant)),
+        body: JSON.stringify(buildRecoveryPayload(restaurant, deal)),
       })
       const started = await apiRequest(
         `/api/v1/recovery-cases/${recovery.id}/start`,
