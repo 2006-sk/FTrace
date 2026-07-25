@@ -1,8 +1,43 @@
 # Kenil — XTrace Memory
 
-Your job is to make the agent improve from real calls. XTrace should remember **how a successful conversation was run**, not just store phone numbers or call transcripts.
+The product first sells what still has value, then donates the rest. Your job is
+to make both decisions improve from outcomes while keeping the strongest XTrace
+demo focused on procedural call learning. XTrace should remember **how a
+successful conversation was run**, not just store phone numbers or transcripts.
 
-The primary demo is procedural transfer:
+## Where deals enter memory
+
+Each surplus event records two linked outcomes:
+
+```json
+{
+  "surplusEventId": "se_123",
+  "sellOutcome": {
+    "targetSegment": "lapsed_guests_30_90_days",
+    "discountPercent": 33,
+    "durationMinutes": 45,
+    "allocatedQuantity": 12,
+    "soldQuantity": 7
+  },
+  "donateOutcome": {
+    "releasedQuantity": 13,
+    "acceptedQuantity": 13,
+    "receiverId": "recv_harbor_house"
+  }
+}
+```
+
+Deal memory can advise the deterministic deal engine with bounded observations
+such as “30% cleared similar inventory” or “a deep discount overloaded the
+kitchen.” It must not silently override inventory conservation, price floors,
+safe-until time, or the sell/donate allocation.
+
+Useful deal retrieval context includes restaurant, food/recipe, time of day,
+hours to expiry, demand level, target segment, discount, and duration. Keep
+lapsed-guest response evidence separate from shelter-call procedures so a
+marketing result can never become a Vapi instruction.
+
+The primary recovery demo is procedural transfer after the timed deal closes:
 
 1. One shelter rejects or delays a donation.
 2. XTrace learns the blocker, such as missing food-safety details.
@@ -18,8 +53,10 @@ The primary demo is procedural transfer:
 - Episode ingestion after every call
 - Extraction of observations and candidate procedures
 - Conflict preservation and supersession history
+- Outcome memory for deal recommendations and lapsed-guest targeting
 
-Kenil does not own Vapi calls, receiver selection, frontend state, or the main app database.
+Kenil does not own prices, allocation invariants, countdown state, Vapi calls,
+receiver selection, frontend state, or the main app database.
 
 ## Interfaces with Shresth
 
@@ -258,4 +295,3 @@ For a reliable demo, procedure extraction may be LLM-assisted, but procedure sel
 - A first-time receiver can receive a procedure learned elsewhere.
 - Every observation has a source and timestamp.
 - Conflicting claims remain separately queryable.
-

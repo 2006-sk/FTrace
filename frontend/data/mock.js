@@ -1,0 +1,123 @@
+export const restaurants = [
+  {
+    id: "broccoli",
+    name: "Super Mario Broccoli",
+    cuisine: "Italian · Veggie",
+    tileX: 8,
+    tileY: 8,
+    color: 0xc45c3e,
+    roofColor: 0x8b3a2a,
+    signColor: 0xe85d4c,
+    revenue: 2327035,
+    reputation: 94,
+    surplusRisk: "high",
+  },
+  {
+    id: "noodle",
+    name: "Pixel Noodle Bar",
+    cuisine: "Asian · Comfort",
+    tileX: 14,
+    tileY: 5,
+    color: 0xd4a574,
+    roofColor: 0x5c4033,
+    signColor: 0xf0b429,
+    revenue: 891200,
+    reputation: 88,
+    surplusRisk: "medium",
+  },
+  {
+    id: "burger",
+    name: "Block Burger Co",
+    cuisine: "American · Grill",
+    tileX: 4,
+    tileY: 5,
+    color: 0xe8a838,
+    roofColor: 0x8b5a1a,
+    signColor: 0x2d6a4f,
+    revenue: 1456000,
+    reputation: 91,
+    surplusRisk: "low",
+  },
+  {
+    id: "taco",
+    name: "Voxel Taco Stand",
+    cuisine: "Mexican · Fast",
+    tileX: 13,
+    tileY: 12,
+    color: 0x2a9d8f,
+    roofColor: 0x1a5c54,
+    signColor: 0xe76f51,
+    revenue: 412800,
+    reputation: 85,
+    surplusRisk: "high",
+  },
+]
+
+export const customers = [
+  { id: "c1", name: "Erik", avatar: "#5b8def", visits: 14, lastOrder: "Broccoli alfredo", reachable: true },
+  { id: "c2", name: "Yusuf", avatar: "#e85d4c", visits: 9, lastOrder: "Garden bowl", reachable: true },
+  { id: "c3", name: "Chloe", avatar: "#f0b429", visits: 22, lastOrder: "Margherita", reachable: true },
+  { id: "c4", name: "Maya", avatar: "#2a9d8f", visits: 6, lastOrder: "Pixel ramen", reachable: false },
+  { id: "c5", name: "Jordan", avatar: "#9b59b6", visits: 11, lastOrder: "Double block burger", reachable: true },
+  { id: "c6", name: "Sofia", avatar: "#e76f51", visits: 17, lastOrder: "Street taco trio", reachable: true },
+  { id: "c7", name: "Leo", avatar: "#4a9c3a", visits: 4, lastOrder: "Caesar crunch", reachable: true },
+  { id: "c8", name: "Aisha", avatar: "#c45c3e", visits: 19, lastOrder: "Pesto pasta", reachable: true },
+]
+
+export const offerSlots = [
+  {
+    id: "slot-mid",
+    label: "Afternoon Clearance",
+    window: "2:00 – 4:00 PM",
+    startsIn: "Live now",
+    active: true,
+    deal: "Bundle leftover greens + pasta — 40% off",
+  },
+  {
+    id: "slot-close",
+    label: "Pre-Close Rescue",
+    window: "1–2 hrs before close",
+    startsIn: "in 3h 20m",
+    active: false,
+    deal: "Chef surprise boxes — 55% off",
+  },
+]
+
+export const surplusItems = [
+  { id: "s1", name: "Broccoli florets", qty: 24, unit: "lb", risk: 0.82 },
+  { id: "s2", name: "Fresh pasta", qty: 16, unit: "packs", risk: 0.71 },
+  { id: "s3", name: "Basil pesto", qty: 8, unit: "jars", risk: 0.45 },
+]
+
+export const inventory = [
+  { id: "inv1", name: "Broccoli florets", qty: 24, unit: "lb", category: "Produce", risk: 0.82, expires: "Tonight" },
+  { id: "inv2", name: "Fresh pasta", qty: 16, unit: "packs", category: "Dry", risk: 0.71, expires: "Tonight" },
+  { id: "inv3", name: "Basil pesto", qty: 8, unit: "jars", category: "Prep", risk: 0.45, expires: "2 days" },
+  { id: "inv4", name: "Mozzarella", qty: 11, unit: "lb", category: "Dairy", risk: 0.63, expires: "Tomorrow" },
+  { id: "inv5", name: "Cherry tomatoes", qty: 9, unit: "lb", category: "Produce", risk: 0.58, expires: "Tomorrow" },
+  { id: "inv6", name: "Olive oil", qty: 5, unit: "bottles", category: "Dry", risk: 0.12, expires: "Ok" },
+  { id: "inv7", name: "Garlic bread", qty: 22, unit: "pcs", category: "Bakery", risk: 0.76, expires: "Tonight" },
+  { id: "inv8", name: "Parmesan", qty: 4, unit: "lb", category: "Dairy", risk: 0.28, expires: "4 days" },
+]
+
+export const dealLogs = [
+  { id: "log1", time: "2:04 PM", type: "deal", title: "Afternoon Clearance went live", detail: "Greens + pasta bundle · 40% off", restaurant: "Super Mario Broccoli" },
+  { id: "log2", time: "2:06 PM", type: "predict", title: "Waste forecast updated", detail: "18 units likely unsold by close", restaurant: "Super Mario Broccoli" },
+  { id: "log3", time: "1:48 PM", type: "deal", title: "Taco trio flash deal", detail: "Street taco surplus · 35% off", restaurant: "Voxel Taco Stand" },
+  { id: "log4", time: "1:22 PM", type: "call", title: "Offer blast queued", detail: "6 regulars notified via Vapi", restaurant: "Voxel Taco Stand" },
+  { id: "log5", time: "12:55 PM", type: "predict", title: "Noodle stock trending down", detail: "Ramen broth risk climbed to 61%", restaurant: "Pixel Noodle Bar" },
+  { id: "log6", time: "11:40 AM", type: "deal", title: "Lunch rescue slot ended", detail: "Recovered $184 from near-waste", restaurant: "Block Burger Co" },
+  { id: "log7", time: "10:12 AM", type: "system", title: "Pre-close slot scheduled", detail: "Chef surprise boxes · 5:30 PM", restaurant: "Super Mario Broccoli" },
+]
+
+/** Tables in restaurant interior (tile coords) */
+export const restaurantTables = [
+  { id: "t1", x: 3, y: 4, occupied: true },
+  { id: "t2", x: 6, y: 4, occupied: true },
+  { id: "t3", x: 9, y: 4, occupied: false },
+  { id: "t4", x: 3, y: 7, occupied: true },
+  { id: "t5", x: 6, y: 7, occupied: true },
+  { id: "t6", x: 9, y: 7, occupied: false },
+  { id: "t7", x: 4, y: 10, occupied: true },
+  { id: "t8", x: 8, y: 10, occupied: false },
+]

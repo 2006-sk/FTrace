@@ -7,12 +7,15 @@
     "start": "node backend/src/index.js",
     "start:xtrace": "npm --prefix xtrace start",
     "start:all": "node scripts/start-all.js",
+    "start:stack": "node scripts/start-stack.js",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:frontend": "npm --prefix frontend run build",
     "dev": "node --watch backend/src/index.js",
     "seed": "node backend/src/seed-cli.js",
     "memory:reset": "node scripts/reset-memory.js",
     "test": "node --test backend/test/*.test.js",
     "test:xtrace": "npm --prefix xtrace test",
-    "test:all": "npm test && npm run test:xtrace"
+    "test:all": "npm test && npm run test:xtrace && npm run build:frontend"
   },
   "engines": {
     "node": ">=22.5.0"

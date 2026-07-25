@@ -1,6 +1,52 @@
-# Shresth — Backend and Vapi
+# Shresth — Backend, Deals, and Vapi
 
-Your job is to orchestrate the whole recovery. The backend owns business state, asks XTrace what the agent should remember, starts Vapi calls, processes Vapi events, and streams updates to Ali's frontend.
+Your job is to orchestrate the whole surplus lifecycle. The backend decides how
+much food can still be sold, creates a bounded deal for lapsed guests, releases
+the remainder for donation, asks XTrace what the agent should remember, starts
+Vapi calls, and processes Vapi events.
+
+## Non-negotiable sell/donate contract
+
+The aggregate is a `surplus_event`, not a recovery case. It records:
+
+- `initialQuantity` and `safeUntil`
+- a sell allocation with `allocatedQuantity`, `soldQuantity`,
+  `originalPriceCents`, `dealPriceCents`, `startsAt`, and `endsAt`
+- `targetSegment: "lapsed_guests_30_90_days"`
+- a donate allocation with `reservedQuantity`, `releaseAt`, and recovery status
+
+The transaction invariant is:
+
+```text
+soldQuantity + acceptedDonationQuantity <= initialQuantity
+```
+
+At `sell.endsAt`, atomically close the deal and add every unclaimed sell unit to
+the donate allocation. Only then create/start the recovery case for that final
+quantity. A Vapi acceptance also reserves its quantity atomically so a late
+deal claim cannot double-allocate food.
+
+### Deal intelligence
+
+`POST /api/v1/deals/recommend` is the current decision primitive. It uses stock,
+hours to expiry, and demand to return `action`, `discountPercent`, duration,
+expected sales, and `recoveryQuantity`. The aggregate layer must persist that
+decision as a surplus event rather than treating it as a disposable UI hint.
+
+Recommended aggregate routes:
+
+| Method | Path | Purpose |
+|---|---|---|
+| `POST` | `/api/v1/surplus-events` | Create food batch and sell/donate split |
+| `GET` | `/api/v1/surplus-events/:id` | Deal countdown, claims, and recovery state |
+| `POST` | `/api/v1/surplus-events/:id/deal/publish` | Publish to the lapsed-guest segment |
+| `POST` | `/api/v1/surplus-events/:id/deal/claims` | Atomically reserve deal units |
+| `POST` | `/api/v1/surplus-events/:id/deal/expire` | Close deal and roll unsold units to donate |
+| `POST` | `/api/v1/surplus-events/:id/recovery/start` | Start Vapi for the donation balance |
+
+The existing inventory, deal-recommendation, and recovery routes are the
+implemented building blocks; these aggregate routes are the contract that joins
+them without double counting.
 
 ## Current implementation
 
@@ -80,7 +126,15 @@ to:
 https://your-backend.example.com/api/v1/webhooks/vapi
 ```
 
-### End-to-end recovery example
+### End-to-end product example
+
+1. Detect 20 surplus biryani meals.
+2. Recommend a 45-minute deal: sell 12 at 33% off to lapsed guests and reserve
+   8 for donation.
+3. Publish the deal card with a server-derived `endsAt` timestamp.
+4. If 7 sell, expire the deal and roll 5 unsold units into donation, producing
+   a final donation quantity of 13.
+5. Start the sequential Vapi/XTrace recovery flow for those 13 meals.
 
 Create two receivers:
 

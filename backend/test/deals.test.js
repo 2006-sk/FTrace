@@ -24,6 +24,9 @@ test('creates a deal for inventory at risk', () => {
   assert.equal(result.action, 'create_deal');
   assert.equal(result.discountPercent, 30);
   assert.ok(result.expectedDealSales > 0);
+  assert.equal(result.sellQuantity + result.donateQuantity, 20);
+  assert.equal(result.targetSegment, 'lapsed_guests_30_90_days');
+  assert.ok(Date.parse(result.endsAt) > Date.parse(result.startsAt));
 });
 
 test('XTrace memory can cap an overly aggressive discount', () => {
@@ -48,4 +51,3 @@ test('starts recovery in parallel when one hour remains', () => {
   assert.equal(result.action, 'deal_and_recovery');
   assert.ok(result.recoveryQuantity > 0);
 });
-

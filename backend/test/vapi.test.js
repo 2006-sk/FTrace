@@ -17,6 +17,15 @@ test('recovery assistant contains dynamic variables and structured outcome', () 
     /\{\{temperatureF\}\}/
   );
   assert.equal(config.analysisPlan.structuredDataPlan.enabled, true);
+  assert.equal(
+    config.backgroundSpeechDenoisingPlan.smartDenoisingPlan.enabled,
+    true
+  );
+  assert.equal(
+    config.backgroundSpeechDenoisingPlan.fourierDenoisingPlan.baselineOffsetDb,
+    -10
+  );
+  assert.equal(config.stopSpeakingPlan.numWords, 2);
   assert.ok(
     config.analysisPlan.structuredDataPlan.schema.properties.status.enum.includes(
       'accepted'
@@ -69,4 +78,3 @@ test('saved assistant call sends metadata separately from dynamic variables', as
     undefined
   );
 });
-

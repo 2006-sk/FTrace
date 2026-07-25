@@ -21,6 +21,13 @@ console.log(
       name: assistant.name,
       model: assistant.model?.model,
       voice: assistant.voice?.voiceId,
+      smartDenoising:
+        assistant.backgroundSpeechDenoisingPlan?.smartDenoisingPlan?.enabled ===
+        true,
+      fourierDenoising:
+        assistant.backgroundSpeechDenoisingPlan?.fourierDenoisingPlan
+          ?.enabled === true,
+      interruptionWords: assistant.stopSpeakingPlan?.numWords ?? null,
       structuredDataEnabled:
         assistant.analysisPlan?.structuredDataPlan?.enabled === true,
       serverMessages: assistant.serverMessages ?? [],
@@ -30,4 +37,3 @@ console.log(
     2
   )
 );
-

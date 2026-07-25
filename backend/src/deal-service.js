@@ -5,6 +5,11 @@ export function recommendDeal(input) {
   const hoursToExpiry = Number(input?.hoursToExpiry);
   const demandLevel = input?.demandLevel;
   const memory = input?.memory ?? 'none';
+  const originalPriceCents = Number.isInteger(input?.originalPriceCents)
+    ? input.originalPriceCents
+    : 1499;
+  const targetSegment =
+    input?.targetSegment ?? 'lapsed_guests_30_90_days';
 
   if (
     !Number.isInteger(inventoryCount) ||
@@ -67,14 +72,31 @@ export function recommendDeal(input) {
     reasons.push('Start shelter recovery now because only one hour remains.');
   }
 
+  const startsAt = new Date().toISOString();
+  const endsAt = new Date(
+    Date.parse(startsAt) + (discountPercent
+      ? Math.min(120, hoursToExpiry * 60)
+      : 0) * 60_000
+  ).toISOString();
+  const sellQuantity = inventoryCount - recoveryQuantity;
+  const dealPriceCents = Math.round(
+    originalPriceCents * (1 - discountPercent / 100)
+  );
+
   return {
     action,
     discountPercent,
     durationMinutes: discountPercent ? Math.min(120, hoursToExpiry * 60) : 0,
+    startsAt,
+    endsAt,
+    targetSegment,
+    originalPriceCents,
+    dealPriceCents,
+    sellQuantity,
+    donateQuantity: recoveryQuantity,
     expectedNormalSales,
     expectedDealSales,
     recoveryQuantity,
     reasons
   };
 }
-

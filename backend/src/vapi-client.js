@@ -196,6 +196,22 @@ export function buildRecoveryAssistantConfig({ serverUrl = '' } = {}) {
       voiceId: 'Elliot',
       version: 2
     },
+    backgroundSpeechDenoisingPlan: {
+      smartDenoisingPlan: {
+        enabled: true
+      },
+      fourierDenoisingPlan: {
+        enabled: true,
+        mediaDetectionEnabled: true,
+        baselineOffsetDb: -10,
+        windowSizeMs: 2000,
+        baselinePercentile: 90
+      }
+    },
+    stopSpeakingPlan: {
+      numWords: 2,
+      backoffSeconds: 1
+    },
     maxDurationSeconds: 240,
     serverMessages: ['end-of-call-report', 'status-update'],
     artifactPlan: {

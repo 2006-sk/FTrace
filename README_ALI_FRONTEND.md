@@ -1,8 +1,42 @@
-# Ali — Frontend
+# Ali — Frontend: Deals and Recovery
 
-Your job is to make the learning loop obvious in under one minute. The key screen is not a large analytics dashboard. It is a recovery case timeline that shows:
+Your job is to make the entire value ladder obvious in under one minute:
 
-**surplus found → call failed → blocker learned → next call used the lesson → pickup confirmed**
+**surplus found → sell some in a timed deal → donate the rest → learn from the
+calls**
+
+Recovery-only screens are incomplete. The home screen must center a surplus
+event whose sell and donate allocations are visible together.
+
+## Required surplus-event card
+
+The primary card must show:
+
+- food name and initial quantity
+- `Sell now` and `Donate next` quantities side by side
+- original price, deal price, and discount
+- a countdown derived from backend `endsAt` (never a client-only resettable timer)
+- remaining deal units and claim progress
+- target chip: `Lapsed guests · 30–90 days`
+- publish/pause action while live
+- automatic “deal ended; N units moved to donation” transition
+
+The deal audience is lapsed guests, not current regulars. This recovers revenue
+without teaching high-frequency customers to wait for a discount.
+
+```text
+┌ Chicken biryani · 20 meals ──────────────────────┐
+│ SELL 12                    DONATE 8               │
+│ $14.99 → $9.99 · 33% off   Shelter recovery      │
+│ Lapsed guests · 30–90d     Releases in 42:18     │
+│ 7 remaining                [Publish deal]         │
+└───────────────────────────────────────────────────┘
+```
+
+After expiry, animate the unsold quantity from `SELL` to `DONATE`; then show the
+Vapi/XTrace recovery timeline:
+
+**call failed → blocker learned → next call used the lesson → pickup confirmed**
 
 ## What Ali owns
 
@@ -19,14 +53,16 @@ Ali does not call XTrace or Vapi directly and must not place their keys in brows
 
 | Route | Screen |
 |---|---|
-| `/` | Recovery cases and “New recovery” button |
+| `/` | Surplus events with sell/donate split and active deal countdown |
+| `/surplus/new` | Create the food batch and preview the intelligent split |
+| `/surplus/:eventId` | Deal card, claims, countdown, and recovery handoff |
 | `/recovery/new` | Food, safety, pickup, and receiver form |
 | `/recovery/:caseId` | Live recovery timeline and call controls |
 | `/recovery/:caseId/memory` | Procedures learned and contested beliefs |
 | `/receivers` | Receiver list and contact status |
 | `/receivers/:receiverId` | Receiver details and prior calls |
 
-If time is short, build only `/`, `/recovery/new`, and `/recovery/:caseId`.
+If time is short, build `/`, `/surplus/:eventId`, and `/recovery/:caseId`.
 
 ## Frontend architecture
 
@@ -50,6 +86,23 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 Only `NEXT_PUBLIC_*` values are visible in the browser. Never add Vapi or XTrace secret keys there.
 
 ## API calls
+
+### Load the deal recommendation
+
+`POST /api/v1/deals/recommend`
+
+```json
+{
+  "inventoryCount": 20,
+  "hoursToExpiry": 4,
+  "demandLevel": "normal",
+  "targetSegment": "lapsed_guests_30_90_days"
+}
+```
+
+Render the returned discount and duration, but persist the actual countdown as
+the surplus event's server timestamp. Poll/refetch event state after every
+claim and when the countdown expires.
 
 ### List cases
 
@@ -275,19 +328,23 @@ Show `message` to the user. Show a retry button only when `retryable` is true. L
 
 ## Build order
 
-1. Create the three minimum routes.
-2. Use mocked backend JSON to complete the timeline.
-3. Connect create/get/start endpoints.
-4. Connect the event stream.
-5. Add the memory transfer animation or highlight.
-6. Add contested-belief cards if time remains.
+1. Create the surplus-event card with sell/donate allocations.
+2. Add deal price, lapsed-guest target, and server-derived countdown.
+3. Connect deal recommendation and surplus-event state.
+4. Show unsold deal units rolling into recovery.
+5. Connect recovery create/get/start endpoints and live status.
+6. Add the memory transfer highlight and contested beliefs.
 
 ## Done when
 
 - No secret keys ship to the browser.
-- A user can create and start a recovery case.
+- A user can create a surplus event and understand its sell/donate split.
+- The deal card has a real countdown, price, remaining quantity, and lapsed
+  target segment.
+- A deal claim reduces only the sell allocation.
+- Unsold deal units visibly roll into donation at expiry.
+- A user can start the resulting recovery case.
 - Refreshing the page restores current state.
 - New call and memory events appear without refreshing.
 - The learning transfer is visible in one glance.
 - Loading, empty, error, disconnected, and completed states all render.
-

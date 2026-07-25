@@ -1,8 +1,61 @@
-# XTrace Surplus Recovery
+# XTrace Surplus Intelligence
 
-XTrace Surplus Recovery helps a restaurant move food that will not sell before it expires. Inventory analytics detect the surplus; the important XTrace use case is learning **how to get a shelter to say yes**.
+XTrace Surplus Intelligence helps a restaurant sell food while it still has
+commercial value and donate what remains before it becomes waste:
 
-The first call may fail because the shelter needs a temperature log, a different contact, or a specific pickup time. XTrace saves the procedure that worked and reuses it on later calls, including calls to new shelters.
+**surplus detected → timed deal to lapsed guests → unsold balance rolls into
+donation recovery → XTrace improves the next call**
+
+Recovery is the second half of the product, not the whole product. The deal
+window protects revenue first; the donation path protects food and community
+value after the deal expires or the sell allocation is exhausted.
+
+## Product object: surplus event
+
+One `surplus_event` owns both allocations so the same food cannot be sold and
+donated twice.
+
+```json
+{
+  "id": "se_123",
+  "restaurantId": "rest_123",
+  "food": {
+    "description": "20 boxed chicken biryani meals",
+    "initialQuantity": 20,
+    "unit": "meal",
+    "safeUntil": "2026-07-26T02:30:00Z"
+  },
+  "sell": {
+    "allocatedQuantity": 12,
+    "soldQuantity": 0,
+    "originalPriceCents": 1499,
+    "dealPriceCents": 999,
+    "discountPercent": 33,
+    "startsAt": "2026-07-25T23:30:00Z",
+    "endsAt": "2026-07-26T00:15:00Z",
+    "targetSegment": "lapsed_guests_30_90_days",
+    "status": "live"
+  },
+  "donate": {
+    "reservedQuantity": 8,
+    "rolloverUnsoldDealQuantity": true,
+    "releaseAt": "2026-07-26T00:15:00Z",
+    "status": "scheduled"
+  }
+}
+```
+
+Invariant:
+`available = initialQuantity - soldQuantity - acceptedDonationQuantity`.
+When the deal countdown reaches zero, its unsold quantity moves to the donation
+allocation atomically.
+
+### Deal card shown to operators and guests
+
+Every live deal card shows the food, remaining quantity, original and deal
+price, discount, a real `endsAt` countdown, and the targeted lapsed-guest
+segment. The operator sees sends, opens, claims, and remaining units. Guests see
+one clear claim/reserve action. A deal is never an unbounded discount banner.
 
 ## Team ownership
 
@@ -32,15 +85,19 @@ The frontend does not call Vapi or XTrace directly. It calls the backend. This k
 
 ## Main demo flow
 
-1. The frontend creates a surplus recovery case.
-2. The backend asks XTrace for useful procedures and beliefs.
-3. The backend builds a Vapi call using the food details and XTrace guidance.
-4. Vapi calls the shelter and sends events to the backend.
-5. The backend updates the frontend and records the result in XTrace.
-6. If the call fails, XTrace extracts the blocker and updates the procedure.
-7. The next call starts with the learned information, such as temperature and off-line time.
+1. Inventory and demand intelligence create a surplus event.
+2. The backend recommends a sell/donate split and a time-boxed price.
+3. The frontend publishes a deal card to guests who have not visited in 30–90
+   days, without training regular full-price buyers to wait for discounts.
+4. Claims reduce the sell balance while the countdown runs.
+5. At expiry, unsold deal units roll into the scheduled donation allocation.
+6. The backend asks XTrace for useful shelter-call procedures and beliefs.
+7. Vapi calls receivers; the backend records each outcome.
+8. If a call fails, XTrace learns the blocker and the next call uses it.
 
-The demo should show **call one fails, XTrace learns why, call two succeeds**. Inventory analytics are the trigger, not the main memory claim.
+The demo shows both halves: **a lapsed guest claims a timed deal, then the
+remaining food enters recovery; call one fails, XTrace learns why, and call two
+succeeds**.
 
 ## Shared data model
 
@@ -48,7 +105,10 @@ All IDs are strings. All timestamps are ISO 8601 UTC strings.
 
 | Object | Purpose |
 |---|---|
-| `recovery_case` | One batch of surplus food that needs a destination |
+| `surplus_event` | Source of truth for one food batch and its sell/donate split |
+| `deal` | A bounded sell allocation with price, audience, and countdown |
+| `guest_segment` | Target audience; the default is lapsed guests, not active regulars |
+| `recovery_case` | Donation allocation released from a surplus event |
 | `receiver` | A shelter or other organization |
 | `call` | One Vapi call attempt |
 | `observation` | Something learned from a source |
@@ -57,7 +117,24 @@ All IDs are strings. All timestamps are ISO 8601 UTC strings.
 
 ## Canonical API flow
 
-### 1. Frontend creates a recovery case
+### 1. Backend recommends the split and deal
+
+`POST /api/v1/deals/recommend`
+
+```json
+{
+  "inventoryCount": 20,
+  "hoursToExpiry": 4,
+  "demandLevel": "normal",
+  "targetSegment": "lapsed_guests_30_90_days"
+}
+```
+
+The response determines the discount and expected deal sales. The surplus-event
+writer persists the resulting sell allocation and reserves the remaining units
+for donation.
+
+### 2. Frontend creates recovery for the released donation allocation
 
 `POST /api/v1/recovery-cases`
 
@@ -91,7 +168,7 @@ Response:
 }
 ```
 
-### 2. Frontend starts recovery
+### 3. Frontend starts recovery
 
 `POST /api/v1/recovery-cases/rc_123/start`
 
@@ -112,7 +189,7 @@ Response:
 }
 ```
 
-### 3. Backend requests XTrace guidance
+### 4. Backend requests XTrace guidance
 
 `POST /xtrace/v1/guidance/search`
 
@@ -303,10 +380,13 @@ Use Server-Sent Events at `GET /api/v1/recovery-cases/:id/events`. WebSocket is 
 
 ## Demo success checklist
 
-- A user can create a recovery case.
+- A user can create one surplus event with visible sell and donate quantities.
+- A live deal card shows price, remaining units, lapsed-guest audience, and a
+  real countdown.
+- Claims reduce the sell balance; countdown expiry moves unsold units to donate.
+- A user can start the resulting recovery case.
 - The call timeline updates live.
 - A failed call produces a visible learned blocker.
 - The next call receives that guidance before it starts.
 - An accepted call shows a confirmed pickup window.
 - Conflicting reports remain visible with their sources.
-
