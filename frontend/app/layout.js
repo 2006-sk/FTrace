@@ -1,7 +1,7 @@
 import "./globals.css"
 
 export const metadata = {
-  title: "Surplus City",
+  title: "XTrace",
   description: "Predict waste, create smart deals, and recover surplus food",
 }
 

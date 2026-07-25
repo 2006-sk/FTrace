@@ -191,7 +191,7 @@ export default class RestaurantScene extends Phaser.Scene {
     barista.setDepth(1)
 
     // ORDER sign hanging above the counter
-    this.add
+    const orderSign = this.add
       .text(cx, topY - 92, "ORDER HERE", {
         fontFamily: FONT,
         fontSize: "9px",
@@ -201,6 +201,10 @@ export default class RestaurantScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setDepth(2)
+      .setInteractive({ useHandCursor: true })
+    orderSign.on("pointerup", () =>
+      useGameStore.getState().openOrderMenu("customer"),
+    )
 
     // a customer standing at the counter
     drawPixelPerson(

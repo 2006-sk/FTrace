@@ -46,7 +46,7 @@ function buildRecoveryPayload(restaurant, deal) {
   const quantity = Math.max(1, deal?.donateQuantity ?? 10)
   return {
     restaurantId: restaurant?.id ?? "surplus-city",
-    restaurantName: restaurant?.name ?? "Surplus City Kitchen",
+    restaurantName: restaurant?.name ?? "XTrace Kitchen",
     food: {
       description: `${quantity} fresh ${deal?.itemName ?? "surplus"} meals`,
       quantity,
@@ -79,6 +79,9 @@ export const useGameStore = create((set, get) => ({
   dealRecommendation: null,
   restaurantOrders: {},
   orderState: null,
+  orderOpen: false,
+  orderMode: "customer",
+  autoCallTriggeredByRestaurant: {},
   backendStatus: "connecting",
   backendError: null,
   inventoryOpen: false,
@@ -94,6 +97,7 @@ export const useGameStore = create((set, get) => ({
       selectedCustomerIds: [],
       callState: null,
       inventoryOpen: false,
+      orderOpen: false,
       dealRecommendation: null,
       orderState: null,
     })
@@ -105,6 +109,7 @@ export const useGameStore = create((set, get) => ({
       view: "city",
       callState: null,
       inventoryOpen: false,
+      orderOpen: false,
     }),
 
   toggleCustomer: (id) => {
@@ -118,6 +123,9 @@ export const useGameStore = create((set, get) => ({
 
   openInventory: () => set({ inventoryOpen: true }),
   closeInventory: () => set({ inventoryOpen: false }),
+  openOrderMenu: (mode = "customer") =>
+    set({ orderOpen: true, orderMode: mode, orderState: null }),
+  closeOrderMenu: () => set({ orderOpen: false }),
 
   pushLog: (entry) =>
     set((state) => ({
@@ -199,26 +207,43 @@ export const useGameStore = create((set, get) => ({
     }
   },
 
-  simulateOrder: async (quantity = 1) => {
+  submitOrders: async (cart, mode = get().orderMode) => {
     const { selectedRestaurant: restaurant, dealRecommendation: deal } = get()
-    if (!restaurant?.dealProfile || !deal || get().orderState?.loading) return
+    const selections = Object.entries(cart ?? {})
+      .map(([recipeId, quantity]) => ({
+        recipeId,
+        quantity: Number(quantity),
+      }))
+      .filter((item) => Number.isInteger(item.quantity) && item.quantity > 0)
+    if (
+      !restaurant?.dealProfile ||
+      !deal ||
+      get().orderState?.loading ||
+      selections.length === 0
+    ) return
+    const totalQuantity = selections.reduce(
+      (total, item) => total + item.quantity,
+      0,
+    )
     set({
       orderState: {
         loading: true,
-        message: `Ordering ${quantity} ${deal.itemName}…`,
+        message: `Preparing ${totalQuantity} item${totalQuantity === 1 ? "" : "s"}…`,
       },
     })
     try {
-      const order = await apiRequest("/api/v1/orders", {
-        method: "POST",
-        body: JSON.stringify({
-          recipeId: restaurant.dealProfile.recipeId,
-          quantity,
-        }),
-      })
+      const orders = []
+      for (const selection of selections) {
+        orders.push(
+          await apiRequest("/api/v1/orders", {
+            method: "POST",
+            body: JSON.stringify(selection),
+          }),
+        )
+      }
       const ingredients = await apiRequest("/api/v1/ingredients")
       const ordered =
-        (get().restaurantOrders[restaurant.id] ?? 0) + quantity
+        (get().restaurantOrders[restaurant.id] ?? 0) + totalQuantity
       set((state) => ({
         inventory: ingredients.items.map(ingredientToInventory),
         restaurantOrders: {
@@ -227,17 +252,41 @@ export const useGameStore = create((set, get) => ({
         },
         orderState: {
           loading: false,
-          message: `${quantity} sold · ingredients deducted`,
-          orderId: order.id,
+          message: `${totalQuantity} sold · stock and deal updated`,
+          orderIds: orders.map((order) => order.id),
         },
+        orderOpen: false,
       }))
       await get().recalculateDeal(restaurant, ordered)
       get().pushLog({
         type: "deal",
-        title: `${quantity} ${deal.itemName} sold`,
-        detail: "SQLite stock deducted · deal recalculated live",
+        title:
+          mode === "demo"
+            ? `Demo batch · ${totalQuantity} orders`
+            : `${totalQuantity} menu item${totalQuantity === 1 ? "" : "s"} sold`,
+        detail: "SQLite ingredients deducted · offer recalculated live",
         restaurant: restaurant.name,
       })
+
+      const shouldAutoCall =
+        restaurant.id === "broccoli" &&
+        !get().autoCallTriggeredByRestaurant[restaurant.id]
+      const receiver = get().customers[0]
+      if (shouldAutoCall && receiver) {
+        set((state) => ({
+          autoCallTriggeredByRestaurant: {
+            ...state.autoCallTriggeredByRestaurant,
+            [restaurant.id]: true,
+          },
+        }))
+        get().pushLog({
+          type: "call",
+          title: "First order triggered recovery",
+          detail: `Calling ${receiver.name} through Vapi`,
+          restaurant: restaurant.name,
+        })
+        void get().beginRecovery([receiver], false)
+      }
     } catch (error) {
       set({
         orderState: {
@@ -247,6 +296,12 @@ export const useGameStore = create((set, get) => ({
         },
       })
     }
+  },
+
+  simulateOrder: (quantity = 1) => {
+    const recipeId = get().selectedRestaurant?.dealProfile?.recipeId
+    if (!recipeId) return
+    return get().submitOrders({ [recipeId]: quantity }, "demo")
   },
 
   startCall: (payload) => set({ callState: { ...payload, progress: 12 } }),

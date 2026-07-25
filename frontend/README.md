@@ -1,4 +1,4 @@
-# Surplus City
+# XTrace
 
 The dashboard is connected to the FTrace backend:
 

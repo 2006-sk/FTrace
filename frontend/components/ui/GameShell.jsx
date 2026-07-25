@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { CharacterAvatar } from "@/components/ui/CharacterAvatar"
 import { InventoryDialog } from "@/components/ui/InventoryDialog"
+import { OrderDialog } from "@/components/ui/OrderDialog"
 import { useGameStore } from "@/lib/store"
 
 const logStyle = {
@@ -55,7 +56,7 @@ export function GameShell() {
   const memoryProcedures = useGameStore((s) => s.memoryProcedures)
   const dealRecommendation = useGameStore((s) => s.dealRecommendation)
   const orderState = useGameStore((s) => s.orderState)
-  const simulateOrder = useGameStore((s) => s.simulateOrder)
+  const openOrderMenu = useGameStore((s) => s.openOrderMenu)
   const bannerRef = useRef(null)
 
   useEffect(() => {
@@ -75,6 +76,23 @@ export function GameShell() {
 
   const active = offerSlots.find((s) => s.active)
   const callActive = callState && (callState.progress ?? 0) < 100
+  const dealTotal =
+    (dealRecommendation?.sellQuantity ?? 0) +
+    (dealRecommendation?.donateQuantity ?? 0)
+  const sellPercent =
+    dealTotal > 0
+      ? Math.round((dealRecommendation.sellQuantity / dealTotal) * 100)
+      : 0
+  const profile = restaurant?.dealProfile
+  const savedDollars =
+    (profile?.savedDollars ?? 0) +
+    Math.round(
+      (dealRecommendation?.orderedQuantity ?? 0) *
+        (dealRecommendation?.dealPriceCents ?? 0) /
+        100,
+    )
+  const mealsSaved =
+    (profile?.mealsSaved ?? 0) + (dealRecommendation?.orderedQuantity ?? 0)
   const statusColor =
     backendStatus === "live"
       ? "border-[#22c55e]/40 bg-[#22c55e]/15 text-[#4ade80]"
@@ -94,7 +112,7 @@ export function GameShell() {
           )}
           <div>
             <p className="font-[family-name:var(--font-pixel)] text-[10px] text-[#f0b429] md:text-xs">
-              SURPLUS CITY
+              XTRACE
             </p>
             <p className="text-sm text-white/70">
               {view === "city"
@@ -120,6 +138,29 @@ export function GameShell() {
           </span>
         </div>
       </header>
+
+      {/* Center: live business impact */}
+      {view === "interior" && (
+        <section className="pointer-events-auto absolute left-1/2 top-24 grid w-[min(640px,calc(100%-40rem))] min-w-[min(100%-2rem,280px)] -translate-x-1/2 grid-cols-3 gap-2">
+          <Card className="px-3 py-2">
+            <p className="pixel text-[7px] text-[#4ade80]">SURPLUS SAVED</p>
+            <p className="mt-1 text-lg font-semibold tabular-nums">
+              ${savedDollars.toLocaleString()}
+            </p>
+          </Card>
+          <Card className="px-3 py-2">
+            <p className="pixel text-[7px] text-[#93c5fd]">MEALS RESCUED</p>
+            <p className="mt-1 text-lg font-semibold tabular-nums">{mealsSaved}</p>
+          </Card>
+          <Card className="min-w-0 px-3 py-2">
+            <p className="pixel text-[7px] text-[#f0b429]">CURRENT OFFER</p>
+            <p className="mt-1 truncate text-sm font-semibold">
+              {dealRecommendation?.discountPercent ?? 0}% ·{" "}
+              {dealRecommendation?.itemName ?? "Calculating…"}
+            </p>
+          </Card>
+        </section>
+      )}
 
       {/* Right: game log */}
       <Card className="pixel-frame pointer-events-auto absolute bottom-6 right-5 top-[4.5rem] flex w-[min(300px,calc(100%-2rem))] flex-col overflow-hidden md:right-6 md:top-24">
@@ -254,7 +295,7 @@ export function GameShell() {
               <div className="min-w-0 flex-1">
                 <div className="mb-1 flex flex-wrap items-center gap-2">
                   <span className="rounded bg-[#e85d4c] px-2 py-0.5 font-[family-name:var(--font-pixel)] text-[8px]">
-                    LIVE DEAL
+                    XTRACE DEAL ENGINE
                   </span>
                   <span className="text-xs text-white/50">
                     {dealRecommendation
@@ -273,18 +314,27 @@ export function GameShell() {
                     ? `${dealRecommendation.itemName} · ${dealRecommendation.sellQuantity + dealRecommendation.donateQuantity} meals`
                     : active?.label}
                   </h3>
-                  <Button
-                    size="sm"
-                    className="pixel-btn shrink-0 px-2 py-1 text-[9px]"
-                    disabled={
-                      !dealRecommendation ||
-                      orderState?.loading ||
-                      dealRecommendation.sellQuantity <= 0
-                    }
-                    onClick={() => simulateOrder(1)}
-                  >
-                    {orderState?.loading ? "ORDERING…" : "SIMULATE ORDER"}
-                  </Button>
+                  <div className="flex shrink-0 gap-1.5">
+                    <Button
+                      size="sm"
+                      className="pixel-btn px-2 py-1 text-[8px]"
+                      disabled={!dealRecommendation || orderState?.loading}
+                      onClick={() => openOrderMenu("customer")}
+                    >
+                      START ORDER
+                    </Button>
+                    {restaurant?.id === "noodle" && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="pixel-btn px-2 py-1 text-[8px]"
+                        disabled={!dealRecommendation || orderState?.loading}
+                        onClick={() => openOrderMenu("demo")}
+                      >
+                        DEMO ORDERS
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 <div className="mt-0.5 flex flex-wrap items-center justify-between gap-2">
                   <p className="text-xs text-white/65">
@@ -318,6 +368,17 @@ export function GameShell() {
                   <p className="text-[10px] text-white/45">Unsold units roll over</p>
                 </div>
               </div>
+              <div
+                className="flex h-2 overflow-hidden rounded-full bg-white/10"
+                aria-label={`${sellPercent}% sell allocation`}
+                data-testid="deal-allocation-bar"
+              >
+                <span
+                  className="h-full bg-[#f0b429] transition-[width] duration-500"
+                  style={{ width: `${sellPercent}%` }}
+                />
+                <span className="h-full flex-1 bg-[#4ade80] transition-[width] duration-500" />
+              </div>
             </div>
           </Card>
         </div>
@@ -350,6 +411,7 @@ export function GameShell() {
       )}
 
       <InventoryDialog />
+      <OrderDialog />
     </div>
   )
 }

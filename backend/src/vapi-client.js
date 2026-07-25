@@ -172,6 +172,10 @@ export function buildRecoveryAssistantConfig({ serverUrl = '' } = {}) {
     'It was prepared at {{preparedAt}}, is currently {{temperatureF}} degrees Fahrenheit, and is safe until {{safeUntil}}.',
     'Pickup is available at {{pickupAddress}} from {{readyAt}} until {{latestAt}}.',
     'Use this guidance learned from earlier calls when it is relevant: {{memoryGuidance}}.',
+    'Speak at a calm, unhurried pace. Use short sentences and a brief pause between the food-safety facts, the pickup window, and your question.',
+    'Say dates and times conversationally, for example "Saturday, July twenty-fifth at five thirty P M." Never read an ISO timestamp aloud.',
+    'Say ranges with the word "to", never "dash". Say phone numbers one digit at a time in natural groups, without saying punctuation.',
+    'Expand abbreviations when speaking: say "degrees Fahrenheit" instead of symbols and "P M" instead of reading letters too quickly.',
     'Your goal is to get a clear yes or no tonight.',
     'Start with food-safety facts before asking whether they can accept.',
     'Never invent information.',
@@ -184,7 +188,7 @@ export function buildRecoveryAssistantConfig({ serverUrl = '' } = {}) {
   return {
     name: 'XTrace Surplus Recovery',
     firstMessage:
-      'Hi, this is the food recovery assistant calling for {{restaurantName}}. We have {{quantityText}} of {{foodDescription}} available tonight. Is this the right person to discuss accepting it?',
+      'Hi, this is the food recovery assistant calling for {{restaurantName}}... We have {{quantityText}} of {{foodDescription}} available tonight. Is this the right person to discuss accepting it?',
     firstMessageMode: 'assistant-speaks-first',
     model: {
       provider: 'openai',

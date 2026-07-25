@@ -7,7 +7,21 @@ function stringify(value, fallback = 'not provided') {
   return String(value);
 }
 
-function callVariables(recoveryCase, receiver) {
+export function formatSpokenDateTime(value) {
+  if (!value) return 'not provided';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short'
+  }).format(date);
+}
+
+export function callVariables(recoveryCase, receiver) {
   const food = recoveryCase.food;
   const pickup = recoveryCase.pickup;
   return {
@@ -20,12 +34,12 @@ function callVariables(recoveryCase, receiver) {
       Array.isArray(food.allergens) && food.allergens.length
         ? food.allergens.join(', ')
         : 'none reported',
-    preparedAt: stringify(food.preparedAt),
+    preparedAt: formatSpokenDateTime(food.preparedAt),
     temperatureF: stringify(food.temperatureF),
-    safeUntil: stringify(food.safeUntil),
+    safeUntil: formatSpokenDateTime(food.safeUntil),
     pickupAddress: stringify(pickup.address),
-    readyAt: stringify(pickup.readyAt),
-    latestAt: stringify(pickup.latestAt)
+    readyAt: formatSpokenDateTime(pickup.readyAt),
+    latestAt: formatSpokenDateTime(pickup.latestAt)
   };
 }
 

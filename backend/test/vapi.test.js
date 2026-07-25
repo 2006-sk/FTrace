@@ -4,6 +4,10 @@ import {
   buildRecoveryAssistantConfig,
   VapiClient
 } from '../src/vapi-client.js';
+import {
+  callVariables,
+  formatSpokenDateTime
+} from '../src/orchestration-service.js';
 
 test('recovery assistant contains dynamic variables and structured outcome', () => {
   const config = buildRecoveryAssistantConfig({
@@ -16,6 +20,8 @@ test('recovery assistant contains dynamic variables and structured outcome', () 
     config.model.messages[0].content,
     /\{\{temperatureF\}\}/
   );
+  assert.match(config.model.messages[0].content, /calm, unhurried pace/);
+  assert.match(config.model.messages[0].content, /never "dash"/);
   assert.equal(config.analysisPlan.structuredDataPlan.enabled, true);
   assert.equal(
     config.backgroundSpeechDenoisingPlan.smartDenoisingPlan.enabled,
@@ -77,4 +83,32 @@ test('saved assistant call sends metadata separately from dynamic variables', as
     requestBody.assistantOverrides.variableValues.recoveryCaseId,
     undefined
   );
+});
+
+test('call variables turn machine timestamps into natural spoken dates', () => {
+  const spoken = formatSpokenDateTime('2026-07-25T23:30:00Z');
+  assert.doesNotMatch(spoken, /T23:30:00|2026-07-25/);
+  assert.match(spoken, /July 25/);
+
+  const variables = callVariables(
+    {
+      restaurantName: 'Demo Kitchen',
+      food: {
+        description: 'pasta',
+        quantity: 4,
+        unit: 'meals',
+        preparedAt: '2026-07-25T22:00:00Z',
+        safeUntil: '2026-07-26T02:00:00Z',
+        temperatureF: 39
+      },
+      pickup: {
+        address: '123 Market Street',
+        readyAt: '2026-07-25T23:30:00Z',
+        latestAt: '2026-07-26T01:00:00Z'
+      }
+    },
+    { name: 'Demo Shelter' }
+  );
+  assert.match(variables.readyAt, /July 25/);
+  assert.doesNotMatch(variables.latestAt, /T01:00:00/);
 });

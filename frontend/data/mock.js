@@ -18,6 +18,12 @@ export const restaurants = [
       hoursToExpiry: 3,
       demandLevel: "low",
       originalPriceCents: 1199,
+      savedDollars: 684,
+      mealsSaved: 47,
+      menu: [
+        { recipeId: "recipe_tomato_pasta", name: "Garden tomato pasta", priceCents: 1199 },
+        { recipeId: "recipe_biryani", name: "Broccoli biryani bowl", priceCents: 1499 },
+      ],
     },
   },
   {
@@ -39,6 +45,13 @@ export const restaurants = [
       hoursToExpiry: 2,
       demandLevel: "normal",
       originalPriceCents: 1499,
+      savedDollars: 438,
+      mealsSaved: 31,
+      demoPreset: { recipe_biryani: 3, recipe_tomato_pasta: 2 },
+      menu: [
+        { recipeId: "recipe_biryani", name: "Spiced biryani bowl", priceCents: 1499 },
+        { recipeId: "recipe_tomato_pasta", name: "Tomato noodle plate", priceCents: 1299 },
+      ],
     },
   },
   {
@@ -60,6 +73,12 @@ export const restaurants = [
       hoursToExpiry: 5,
       demandLevel: "high",
       originalPriceCents: 1299,
+      savedDollars: 912,
+      mealsSaved: 68,
+      menu: [
+        { recipeId: "recipe_tomato_pasta", name: "Crispy pasta bake", priceCents: 1299 },
+        { recipeId: "recipe_biryani", name: "Block biryani box", priceCents: 1599 },
+      ],
     },
   },
   {
@@ -81,6 +100,12 @@ export const restaurants = [
       hoursToExpiry: 1,
       demandLevel: "low",
       originalPriceCents: 1399,
+      savedDollars: 526,
+      mealsSaved: 39,
+      menu: [
+        { recipeId: "recipe_biryani", name: "Late-night biryani box", priceCents: 1399 },
+        { recipeId: "recipe_tomato_pasta", name: "Street tomato pasta", priceCents: 1099 },
+      ],
     },
   },
 ]
