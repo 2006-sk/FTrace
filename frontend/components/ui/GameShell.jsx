@@ -5,7 +5,6 @@ import gsap from "gsap"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { CharacterAvatar } from "@/components/ui/CharacterAvatar"
 import { InventoryDialog } from "@/components/ui/InventoryDialog"
 import { OrderDialog } from "@/components/ui/OrderDialog"
 import { useGameStore } from "@/lib/store"
@@ -41,9 +40,6 @@ export function GameShell() {
   const openRestaurant = useGameStore((s) => s.openRestaurant)
   const restaurants = useGameStore((s) => s.restaurants)
   const customers = useGameStore((s) => s.customers)
-  const selectedIds = useGameStore((s) => s.selectedCustomerIds)
-  const toggleCustomer = useGameStore((s) => s.toggleCustomer)
-  const callSelected = useGameStore((s) => s.callSelected)
   const callOne = useGameStore((s) => s.callOne)
   const callState = useGameStore((s) => s.callState)
   const dismissCall = useGameStore((s) => s.dismissCall)
@@ -120,6 +116,17 @@ export function GameShell() {
                 : restaurant?.name ?? "Restaurant"}
             </p>
           </div>
+          {view === "interior" && (
+            <Button
+              size="sm"
+              className="pixel-btn ml-2 px-3 py-2 text-[9px]"
+              disabled={customers.length === 0 || callActive}
+              onClick={() => customers[0] && callOne(customers[0])}
+              data-testid="header-call-button"
+            >
+              {callActive ? "CALLING…" : "CALL"}
+            </Button>
+          )}
         </div>
         <div className="flex items-center gap-4 text-sm">
           {restaurant && view === "interior" && (
@@ -141,7 +148,7 @@ export function GameShell() {
 
       {/* Center: live business impact */}
       {view === "interior" && (
-        <section className="pointer-events-auto absolute left-1/2 top-24 grid w-[min(640px,calc(100%-40rem))] min-w-[min(100%-2rem,280px)] -translate-x-1/2 grid-cols-3 gap-2">
+        <section className="pointer-events-auto absolute left-1/2 top-24 grid w-[min(820px,calc(100%-24rem))] min-w-[min(100%-2rem,280px)] -translate-x-1/2 grid-cols-3 gap-2">
           <Card className="px-3 py-2">
             <p className="pixel text-[7px] text-[#4ade80]">SURPLUS SAVED</p>
             <p className="mt-1 text-lg font-semibold tabular-nums">
@@ -213,82 +220,11 @@ export function GameShell() {
         </Card>
       )}
 
-      {/* Left: food recovery receivers */}
-      {view === "interior" && (
-        <Card className="pixel-frame pointer-events-auto absolute bottom-6 left-5 top-[4.5rem] flex w-[min(320px,calc(100%-2rem))] flex-col overflow-hidden md:left-6 md:top-24">
-          <CardHeader className="border-b-2 border-[#0c1020] bg-[#0f1428]">
-            <p className="pixel text-[9px] text-[#f0b429]">RECOVERY NETWORK</p>
-            <CardTitle className="pixel mt-1.5 text-[11px]">Receiver list</CardTitle>
-            <CardDescription className="mt-1 text-[#8fa0c8]">
-              Live shelters and partners · Vapi + XTrace
-            </CardDescription>
-          </CardHeader>
-          <ScrollArea className="flex-1">
-            <CardContent className="space-y-2 p-3">
-              {customers.length === 0 && (
-                <div className="pixel-cell px-3 py-4 text-xs text-white/55">
-                  {backendStatus === "connecting"
-                    ? "Loading receivers…"
-                    : "No active receivers are configured."}
-                </div>
-              )}
-              {customers.map((c) => {
-                const selected = selectedIds.includes(c.id)
-                const calling = callState?.customerId === c.id
-                return (
-                  <div
-                    key={c.id}
-                    className={`flex items-center gap-2 px-2.5 py-2 ${
-                      selected ? "pixel-cell--active" : "pixel-cell"
-                    }`}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => toggleCustomer(c.id)}
-                      disabled={!c.reachable}
-                      className="flex min-w-0 flex-1 items-center gap-2 text-left disabled:opacity-40"
-                    >
-                      <CharacterAvatar name={c.name} color={c.avatar} />
-                      <span className="min-w-0">
-                        <span className="block truncate text-sm font-medium">{c.name}</span>
-                        <span className="block truncate text-xs text-white/45">
-                          {c.lastOrder} · {c.phone}
-                        </span>
-                      </span>
-                    </button>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="pixel-btn bg-[#2a3556] text-white"
-                      disabled={!c.reachable || calling || callActive}
-                      onClick={() => callOne(c)}
-                    >
-                      {calling ? "…" : "CALL"}
-                    </Button>
-                  </div>
-                )
-              })}
-            </CardContent>
-          </ScrollArea>
-          <div className="border-t-2 border-[#0c1020] bg-[#0f1428] p-3">
-            <Button
-              className="pixel-btn w-full py-3"
-              disabled={selectedIds.length === 0 || callActive}
-              onClick={callSelected}
-            >
-              {callActive && callState?.bulk
-                ? "DIALING…"
-                : `CALL SELECTED (${selectedIds.length})`}
-            </Button>
-          </div>
-        </Card>
-      )}
-
       {/* Offer banner */}
       {view === "interior" && (
         <div
           ref={bannerRef}
-          className="pointer-events-auto absolute bottom-4 left-1/2 w-[min(640px,calc(100%-40rem))] min-w-[min(100%-2rem,280px)] -translate-x-1/2"
+          className="pointer-events-auto absolute bottom-4 left-1/2 w-[min(820px,calc(100%-24rem))] min-w-[min(100%-2rem,280px)] -translate-x-1/2"
         >
           <Card className="overflow-hidden" data-testid="deal-card">
             <div className="flex flex-col gap-2 p-3 md:p-3.5">
