@@ -89,6 +89,15 @@ export function GameShell() {
     )
   const mealsSaved =
     (profile?.mealsSaved ?? 0) + (dealRecommendation?.orderedQuantity ?? 0)
+  const currentStock = dealRecommendation
+    ? dealRecommendation.sellQuantity + dealRecommendation.donateQuantity
+    : profile?.inventoryCount ?? 0
+  const atRisk = dealRecommendation
+    ? Math.max(
+        0,
+        currentStock - (dealRecommendation.expectedNormalSales ?? 0),
+      )
+    : 0
   const statusColor =
     backendStatus === "live"
       ? "border-[#22c55e]/40 bg-[#22c55e]/15 text-[#4ade80]"
@@ -167,6 +176,47 @@ export function GameShell() {
             </p>
           </Card>
         </section>
+      )}
+
+      {/* Left: live deal formula */}
+      {view === "interior" && (
+        <Card
+          className="pointer-events-auto absolute left-5 top-24 w-56 p-3 md:left-6"
+          data-testid="deal-formula-card"
+        >
+          <p className="pixel text-[8px] text-[#f0b429]">LIVE DEAL FORMULA</p>
+          <p className="mt-2 text-[10px] leading-relaxed text-white/55">
+            At risk = stock − expected sales
+          </p>
+          <p className="font-mono text-xs tabular-nums text-white/85">
+            {currentStock} − {dealRecommendation?.expectedNormalSales ?? 0} ={" "}
+            <span className="text-[#f0b429]">{atRisk}</span>
+          </p>
+          <p className="mt-2 text-[10px] leading-relaxed text-white/55">
+            Deal price = price × (1 − discount)
+          </p>
+          <p className="font-mono text-xs tabular-nums text-white/85">
+            $
+            {((dealRecommendation?.originalPriceCents ?? 0) / 100).toFixed(2)}
+            {" × "}
+            {1 - (dealRecommendation?.discountPercent ?? 0) / 100} ={" "}
+            <span className="text-[#4ade80]">
+              $
+              {((dealRecommendation?.dealPriceCents ?? 0) / 100).toFixed(2)}
+            </span>
+          </p>
+          <div className="mt-2 border-t border-white/10 pt-2 text-[10px] text-white/55">
+            Donate = stock − normal sales − deal sales
+            <p className="mt-0.5 font-mono text-xs tabular-nums text-white/85">
+              {currentStock} −{" "}
+              {dealRecommendation?.expectedNormalSales ?? 0} −{" "}
+              {dealRecommendation?.expectedDealSales ?? 0} ={" "}
+              <span className="text-[#4ade80]">
+                {dealRecommendation?.donateQuantity ?? 0}
+              </span>
+            </p>
+          </div>
+        </Card>
       )}
 
       {/* Right: game log */}
